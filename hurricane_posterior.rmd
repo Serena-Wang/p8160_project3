@@ -1,0 +1,123 @@
+---
+title: "hurricane_posterior"
+author: "Yijin Wang"
+date: "2023-04-17"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Model
+
+$$Y_{i}(t+6) =\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+
+\beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma+ \epsilon_{i}(t)$$ 
+
+$$\begin{bmatrix}\beta_{0,i} \\\beta_{1,i}\\ \beta_{2,i} \\\beta_{3,i} \\\beta_{4,i}\end{bmatrix} \sim MVN(\begin{bmatrix}\mu_{0,i} \\\mu_{1,i}\\ \mu_{2,i} \\\mu_{3,i} \\\mu_{4,i}\end{bmatrix},\Sigma)$$
+
+$$\epsilon_i \sim N(0, \sigma^2)$$
+
+## Priors
+
+1. 
+$$\begin{bmatrix}\mu_{0,i} \\\mu_{1,i}\\ \mu_{2,i} \\\mu_{3,i} \\\mu_{4,i}\end{bmatrix} \sim MVN(\begin{bmatrix}0 \\0\\ 0 \\0 \\0\end{bmatrix},
+V)$$
+
+$$ f_{\mu_i}(\mu_i) \propto det(V)^{\frac{-1}{2}}e^{\frac{-1}{2}\mu_i^\intercal V^{-1}\mu_i} \propto e^{\frac{-1}{2}\mu_i^\intercal V^{-1}\mu_i}$$
+
+2. 
+$$
+\Sigma \sim W^{-1}(S, \nu = 5)
+$$
+
+$$f_{\Sigma^{-1}}(\Sigma)  \propto |\Sigma^{-1}|^{n+1}e^{\frac{-1}{2}tr(\Sigma^{-1})}$$ 
+
+where n is the dimension of dataset... this formula might be wrong meh
+
+determinant n dim of of sigma
+
+Wishart
+
+Due to property of Wishart distribution, $$\Sigma^{-1} \sim W(S^{-1}, \nu = 5)$$
+$$f_{\Sigma^{-1}}(\Sigma^{-1})   = |\Sigma^{-1}|^{\frac{\nu-d-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) \propto |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) $$ 
+ 
+3.
+
+$$\gamma \sim MVN(\begin{bmatrix} 0 \\ 0\\0 \end{bmatrix}, 0.005^2I_3)$$
+$$f_\gamma(\gamma) = (3*0.005^2)^{-1/2} exp(-\frac{\gamma ^\intercal 0.005^2I_3\gamma}{2}) \propto exp(-\frac{400\gamma ^\intercal\gamma}{2}) $$
+
+4. 
+
+$$\sigma \sim Half-Cauchy(0,10)$$
+$$f_\sigma(\sigma)  = \frac{2*10}{\pi(\sigma^2+10^2)}$$
+By transformation theorem 
+
+$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}|$$
+
+
+## Likelihood
+
+Because random effects coefficients $\beta_i$ is normal, $Y_i|\beta_i$ also follows a normal distribution by property of normal distribution. 
+
+For each hurricane $Y_i$
+
+$$\begin{aligned}Y_i|\beta_i, \mu_i, \sigma^2, \Sigma, \gamma \sim & MVN(\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+ \beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma,  \sigma^2I_i) \\
+= & MVN(D_{i}\beta_{i}+X_i\gamma,  \sigma^2I_{n_i})\end{aligned}$$
+
+where 
+
+$$Y_{i} = \begin{bmatrix}Y_i(t=6) \\Y_i(t=7) \\ \vdots \\ Y_i(t=t_j+6) \\ \vdots \\ Y_i(t =n_i+5) \end{bmatrix}_{n_i\times 1}$$
+$$\begin{aligned}D_{i}(t) =& \begin{bmatrix} 1 & Y_i(t) & \Delta_{i,1}(t)&\Delta_{i,2}(t)& \Delta_{i,3}(t)\end{bmatrix} \\
+=&\begin{bmatrix} 1 & Y_i(t=0) & \Delta_{i,1}(t=0)&\Delta_{i,2}(t=0)& \Delta_{i,3}(t=0)\\
+1 & Y_i(t=1) & \Delta_{i,1}(t=1)&\Delta_{i,2}(t=1)& \Delta_{i,3}(t=1)\\ \dots\\ 1 & Y_i(t=t_j) & \Delta_{i,1}(t=t_j)&\Delta_{i,2}(t=t_j)& \Delta_{i,3}(t=t_j)\\\dots\\ 1 & Y_i(t = n_i-1 ) & \Delta_{n,1}(t=n_i-1)&\Delta_{n,2}(t=n_i-1)& \Delta_{n,3}(t=n_i-1)\end{bmatrix}_{n_i\times 5}\end{aligned}$$
+$$\beta_i = \begin{bmatrix} \beta_{0,i} \\\beta_{1,i}\\\beta_{2,i} \\\beta_{3,i}\\\beta_{4,i}\end{bmatrix}$$ $$X_i = \begin{bmatrix} x_{i,1} & x_{i,2} & x_{i,3}\end{bmatrix}_{1\times 3}$$ 
+$$\gamma = \begin{bmatrix} \gamma_1 \\ \gamma_2 \\ \gamma_3\end{bmatrix}_{3\times 1}$$
+
+Likelihood for the ith hurricane is 
+
+$$f(Y_i|\beta_i,\mu_i, \sigma^2, \Sigma, \gamma) = det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2})$$
+
+To calculate the joint likelihood for $Y = \begin{bmatrix}Y_1 & Y_2 \dots Y_i \dots Y_H\end{bmatrix}^\intercal$, we denote total number of observations for all hurricanes as $N = \sum_{i=0}^{H} n_i$ where $n_i$ is the total number of observation for the ith hurricane and $H$ is the total number of hurricanes.
+
+All random effects coefficients $\beta_i$ in $$\begin{aligned}B =& \begin{bmatrix} \beta_1 & \beta_{2} \dots & \beta_{i} & \dots \beta_{H} \end{bmatrix}\\ =&\begin{bmatrix} \beta_{0,1} &\beta_{0,2}&\dots&\beta_{0,i}&\dots & \beta_{0,H} \\ \beta_{1,1} & \beta_{1,2}&\dots& \beta_{1,i} &\dots & \beta_{1,H}\\ \beta_{2,1} & \beta_{2,2}&\dots& \beta_{2,i} &\dots & \beta_{2,H} \\\beta_{3,1} & \beta_{3,2}&\dots& \beta_{3,i} &\dots & \beta_{3,H} \\\beta_{4,1} & \beta_{4,2}&\dots& \beta_{4,i} &\dots & \beta_{4,H}\end{bmatrix}_{5\times H}\end{aligned}$$
+
+Design matrix for random effects for all hurricanes are in $D$. $D =\begin{bmatrix} D_{1}(t) \\ D_{2}(t) \\ \vdots \\  D_{i}(t)\\  \vdots \\ D_{H}(t) \end{bmatrix}_{N\times 5}$
+
+
+Due to independence of each hurricane, the joint likelihood is 
+$$\begin{aligned}L_Y(B,\mu, \sigma^2, \Sigma,\gamma) =& \prod_{i=1}^{H} L_{Y_i}(\beta_i, \mu, \sigma^2, \Sigma,\gamma) \\
+=& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \\
+=& \frac{1}{\sigma^N}exp(-\frac{(Y-DB-X\gamma)^\intercal(Y-DB-X\gamma)}{2\sigma^2})\end{aligned}$$
+
+## Posterior
+
+By Baye's Rule $$f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, \Sigma)  \times f(\mu)  \times f(\Sigma)  \times f(\sigma^2) \times f(\gamma)$$ 
+where 
+$$\begin{aligned} \mu =& \begin{bmatrix} \mu_1 & \mu_{2} \dots & \mu_{i} & \dots \mu_{H} \end{bmatrix} \\=& \begin{bmatrix} \mu_{0,1} &\mu_{0,2}&\dots&\mu_{0,i}&\dots & \mu_{0,H} \\ \mu_{1,1} & \mu_{1,2}&\dots& \mu_{1,i} &\dots & \mu_{1,H}\\ \mu_{2,1} & \mu_{2,2}&\dots& \mu_{2,i} &\dots & \mu_{2,H} \\\mu_{3,1} & \mu_{3,2}&\dots& \mu_{3,i} &\dots & \mu_{3,H} \\\mu_{4,1} & \mu_{4,2}&\dots& \mu_{4,i} &\dots & \mu_{4,H}\end{bmatrix}_{5\times H}\end{aligned}$$
+$$\begin{aligned}f(B|\mu, \Sigma)  =& \prod_{i=1}^{H} f(\beta_i|\mu_i, \Sigma) \\
+=& \prod_{i=1}^{H} det(\Sigma)^{-1/2} exp(-\frac{(\beta_i-\mu_i)^\intercal \Sigma^{-1}(\beta_i-\mu_i)}{2}) \\
+=& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu_i)^\intercal A (\beta_i-\mu_i)}{2})\end{aligned}$$ where 
+$A = \Sigma^{-1}$
+
+$$ \begin{aligned} f(\mu) =& \prod_{i=1}^{H} f_{\mu_{i}}(\mu_i) \\
+=& \prod_{i=1}^{H} det(V)^{\frac{-1}{2}}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \\
+=& det(V)^{\frac{-H}{2}} \prod_{i=1}^{H}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \end{aligned}$$
+
+We'll only use $f_{\Sigma^{-1}}$ because only $\Sigma^{-1}$ shows up in the likelihood equation. We denote $A = \Sigma^{-1}$ in the posterior. 
+
+$$f_{\Sigma^{-1}}(\Sigma^{-1})  \propto |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}})$$ 
+$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}|$$
+$$\begin{aligned}f_{\gamma}(\gamma) =&exp(-\frac{400\gamma ^\intercal\gamma}{2})\end{aligned}$$
+
+Final posterior
+
+$$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, \Sigma)  \times f(\mu)  \times f(\Sigma^{-1})  \times f(\sigma^2) \times f(\gamma) \\
+=& f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, A)  \times f(\mu)  \times f(A)  \times f(\sigma^2) \times f(\gamma) \\
+=& \frac{1}{\sigma^N}exp(-\frac{(Y-DB-X\gamma)^\intercal(Y-DB-X\gamma)}{2\sigma^2}) \times \\
+& det(A)^{H/2}\prod_{i=1}^{n} exp(-\frac{(\beta_i-\mu_i)^\intercal A (\beta_i-\mu_i)}{2})\times \\
+& det(V)^{\frac{-H}{2}} \prod_{i=1}^{n}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \times \\ 
+& |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) \times \\
+& \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}| \times \\
+& exp(-\frac{400\gamma ^\intercal\gamma}{2}) 
+\end{aligned}$$
