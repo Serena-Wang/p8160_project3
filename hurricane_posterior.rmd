@@ -117,7 +117,7 @@ $$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \si
 =& \frac{1}{\sigma^N}exp(-\frac{(Y-DB-X\gamma)^\intercal(Y-DB-X\gamma)}{2\sigma^2}) \times \\
 & det(A)^{H/2}\prod_{i=1}^{n} exp(-\frac{(\beta_i-\mu_i)^\intercal A (\beta_i-\mu_i)}{2})\times \\
 & det(V)^{\frac{-H}{2}} \prod_{i=1}^{n}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \times \\ 
-& |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) \times \\
+& |A|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(SA)}{2}}) \times \\
 & \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}| \times \\
 & exp(-\frac{400\gamma ^\intercal\gamma}{2}) 
 \end{aligned}$$
