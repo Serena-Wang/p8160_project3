@@ -53,7 +53,7 @@ $$\sigma \sim Half-Cauchy(0,10)$$
 $$f_\sigma(\sigma)  = \frac{2*10}{\pi(\sigma^2+10^2)}$$
 By transformation theorem 
 
-$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}|$$
+$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} \frac{1}{2\sigma}\propto \frac{1}{\pi(\sigma^2+10^2)\sigma}$$
 
 
 ## Likelihood
@@ -106,8 +106,8 @@ $$ \begin{aligned} f(\mu) =& \prod_{i=1}^{H} f_{\mu_{i}}(\mu_i) \\
 
 We'll only use $f_{\Sigma^{-1}}$ because only $\Sigma^{-1}$ shows up in the likelihood equation. We denote $A = \Sigma^{-1}$ in the posterior. 
 
-$$f_{\Sigma^{-1}}(\Sigma^{-1})  \propto |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}})$$ 
-$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}|$$
+$$f_{\Sigma^{-1}}(\Sigma^{-1})  \propto |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) $$ 
+$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} \frac{1}{2\sigma}\propto \frac{1}{\pi(\sigma^2+10^2)\sigma}$$
 $$\begin{aligned}f_{\gamma}(\gamma) =&exp(-\frac{400\gamma ^\intercal\gamma}{2})\end{aligned}$$
 
 Final posterior
@@ -118,6 +118,6 @@ $$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \si
 & det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu_i)^\intercal A (\beta_i-\mu_i)}{2})\times \\
 & det(V)^{\frac{-H}{2}} \prod_{i=1}^{H}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \times \\ 
 & |A|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(SA)}{2}}) \times \\
-& \frac{2*10}{\pi(\sigma^2+10^2)} |\frac{\sigma}{2}| \times \\
+&\frac{1}{\pi(\sigma^2+10^2)\sigma} \times \\
 & exp(-\frac{400\gamma ^\intercal\gamma}{2}) 
 \end{aligned}$$
