@@ -1,6 +1,6 @@
 ---
 title: "hurricane_posterior"
-author: "Yijin Wang"
+author: "Yijin Wang, Youlan Shen, Yujia Li"
 date: "2023-04-17"
 output: pdf_document
 ---
@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 $$Y_{i}(t+6) =\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+
 \beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma+ \epsilon_{i}(t)$$ 
 
-$$\begin{bmatrix}\beta_{0,i} \\\beta_{1,i}\\ \beta_{2,i} \\\beta_{3,i} \\\beta_{4,i}\end{bmatrix} \sim MVN(\begin{bmatrix}\mu_{0,i} \\\mu_{1,i}\\ \mu_{2,i} \\\mu_{3,i} \\\mu_{4,i}\end{bmatrix},\Sigma)$$
+$$\begin{bmatrix}\beta_{0,i} \\\beta_{1,i}\\ \beta_{2,i} \\\beta_{3,i} \\\beta_{4,i}\end{bmatrix} \sim MVN(\begin{bmatrix}\mu_{0} \\\mu_{1}\\ \mu_{2} \\\mu_{3} \\\mu_{4}\end{bmatrix},\Sigma)$$
 
 $$\epsilon_i \sim N(0, \sigma^2)$$
 
@@ -94,15 +94,13 @@ $$\begin{aligned}L_Y(B,\mu, \sigma^2, \Sigma,\gamma) =& \prod_{i=1}^{H} L_{Y_i}(
 
 By Baye's Rule $$f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, \Sigma)  \times f(\mu)  \times f(\Sigma)  \times f(\sigma^2) \times f(\gamma)$$ 
 where 
-$$\begin{aligned} \mu =& \begin{bmatrix} \mu_1 & \mu_{2} \dots & \mu_{i} & \dots \mu_{H} \end{bmatrix} \\=& \begin{bmatrix} \mu_{0,1} &\mu_{0,2}&\dots&\mu_{0,i}&\dots & \mu_{0,H} \\ \mu_{1,1} & \mu_{1,2}&\dots& \mu_{1,i} &\dots & \mu_{1,H}\\ \mu_{2,1} & \mu_{2,2}&\dots& \mu_{2,i} &\dots & \mu_{2,H} \\\mu_{3,1} & \mu_{3,2}&\dots& \mu_{3,i} &\dots & \mu_{3,H} \\\mu_{4,1} & \mu_{4,2}&\dots& \mu_{4,i} &\dots & \mu_{4,H}\end{bmatrix}_{5\times H}\end{aligned}$$
-$$\begin{aligned}f(B|\mu, \Sigma)  =& \prod_{i=1}^{H} f(\beta_i|\mu_i, \Sigma) \\
-=& \prod_{i=1}^{H} det(\Sigma)^{-1/2} exp(-\frac{(\beta_i-\mu_i)^\intercal \Sigma^{-1}(\beta_i-\mu_i)}{2}) \\
-=& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu_i)^\intercal A (\beta_i-\mu_i)}{2})\end{aligned}$$ where 
+$$\begin{aligned} \mu =& \begin{bmatrix}\mu_{0} \\\mu_{1}\\ \mu_{2} \\\mu_{3} \\\mu_{4}\end{bmatrix}_{5\times 1}\end{aligned}$$
+$$\begin{aligned}f(B|\mu, \Sigma)  =& \prod_{i=1}^{H} f(\beta_i|\mu, \Sigma) \\
+=& \prod_{i=1}^{H} det(\Sigma)^{-1/2} exp(-\frac{(\beta_i-\mu)^\intercal \Sigma^{-1}(\beta_i-\mu)}{2}) \\
+=& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\end{aligned}$$ where 
 $A = \Sigma^{-1}$
 
-$$ \begin{aligned} f(\mu) =& \prod_{i=1}^{H} f_{\mu_{i}}(\mu_i) \\
-=& \prod_{i=1}^{H} det(V)^{\frac{-1}{2}}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \\
-=& det(V)^{\frac{-H}{2}} \prod_{i=1}^{H}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \end{aligned}$$
+$$ \begin{aligned} f(\mu) =& det(V)^{\frac{-1}{2}}exp({-\frac{\mu^\intercal V^{-1}\mu}{2}}) \end{aligned}$$
 
 We'll only use $f_{\Sigma^{-1}}$ because only $\Sigma^{-1}$ shows up in the likelihood equation. We denote $A = \Sigma^{-1}$ in the posterior. 
 
@@ -114,10 +112,20 @@ Final posterior
 
 $$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, \Sigma)  \times f(\mu)  \times f(\Sigma^{-1})  \times f(\sigma^2) \times f(\gamma) \\
 =& f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, A)  \times f(\mu)  \times f(A)  \times f(\sigma^2) \times f(\gamma) \\
-=& \frac{1}{\sigma^N}exp(-\frac{(Y-DB-X\gamma)^\intercal(Y-DB-X\gamma)}{2\sigma^2}) \times \\
-& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu_i)^\intercal A (\beta_i-\mu_i)}{2})\times \\
-& det(V)^{\frac{-H}{2}} \prod_{i=1}^{H}exp({-\frac{\mu_i^\intercal V^{-1}\mu_i}{2}}) \times \\ 
+=& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\times \\
+& det(V)^{\frac{-1}{2}}exp({-\frac{\mu^\intercal V^{-1}\mu}{2}}) \times \\ 
 & |A|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(SA)}{2}}) \times \\
 &\frac{1}{\pi(\sigma^2+10^2)\sigma} \times \\
 & exp(-\frac{400\gamma ^\intercal\gamma}{2}) 
-\end{aligned}$$
+\end{aligned}$$ 
+
+## Conditional Posterior
+
+$$\begin{aligned} f(B,\mu|\Sigma) =& f(B|\mu, \Sigma)  \times f(\mu)\\
+=& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\times
+det(V)^{\frac{-1}{2}}exp({-\frac{\mu^\intercal V^{-1}\mu}{2}})
+\end{aligned}$$  
+
+$$\begin{aligned} f(B|\mu, \sigma^2, \Sigma, \gamma, Y)\propto \prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\end{aligned} $$
+
