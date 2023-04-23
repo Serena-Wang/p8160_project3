@@ -122,10 +122,49 @@ $$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \si
 
 ## Conditional Posterior
 
-$$\begin{aligned} f(B,\mu|\Sigma) =& f(B|\mu, \Sigma)  \times f(\mu)\\
-=& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\times
-det(V)^{\frac{-1}{2}}exp({-\frac{\mu^\intercal V^{-1}\mu}{2}})
-\end{aligned}$$  
+For B,
 
-$$\begin{aligned} f(B|\mu, \sigma^2, \Sigma, \gamma, Y)\propto \prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\end{aligned} $$
+$$\begin{aligned} f(B|\mu, \sigma^2, \Sigma, \gamma, Y)\propto  
+& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
+\propto & \prod_{i=1}^{H} exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
+=& exp(\sum_{i=1}^{H} )
+\end{aligned}$$
 
+
+
+For $\mu$,
+
+$$\begin{aligned} f(\mu|B, \sigma^2, \Sigma, \gamma, Y)\propto 
+& \prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) exp({-\frac{\mu^\intercal V^{-1}\mu}{2}}) \\
+=& exp(\sum_{i=1}^{H} )
+\end{aligned}$$
+
+
+
+For $\sigma^2$,
+
+$$\begin{aligned} f(\sigma^2|B, \mu, \Sigma, \gamma, Y)\propto 
+& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+& \frac{1}{\pi(\sigma^2+10^2)\sigma} \\
+=& exp(\sum_{i=1}^{H} )
+\end{aligned}$$
+
+
+
+For $A = \Sigma^{-1}$,
+
+$$\begin{aligned} f(\Sigma^{-1}|B, \mu, \sigma^2, \gamma, Y)\propto 
+& det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\times \\
+& |A|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(SA)}{2}}) \\
+=& exp(\sum_{i=1}^{H} )
+\end{aligned}$$
+
+
+For $\gamma$,
+
+$$\begin{aligned} f(\gamma|B, \mu, \sigma^2, \Sigma, Y)\propto 
+=& \prod_{i=1}^{H} exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+& exp(-\frac{400\gamma ^\intercal\gamma}{2}) \\
+=& exp(\sum_{i=1}^{H} )
+\end{aligned}$$
