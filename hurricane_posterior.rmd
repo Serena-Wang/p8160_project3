@@ -141,9 +141,13 @@ For $\mu$,
 
 $$\begin{aligned} f(\mu|B, \sigma^2, \Sigma, \gamma, Y)\propto 
 & \prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) exp({-\frac{\mu^\intercal V^{-1}\mu}{2}}) \\
-=& exp(\sum_{i=1}^{H} )
+=& exp(\sum_{i=1}^{H} -\frac{1}{2} (\mu^\intercal(A-V^{-1})\mu - 2\mu^\intercal A \beta_i + \beta_i^\intercal A \beta_i)) \\
+=& exp(-\frac{1}{2} (\mu^\intercal H(A-V^{-1})\mu - 2\mu^\intercal \sum_{i=1}^{H}(A \beta_i) + \beta_i^\intercal A \beta_i)) \\ 
 \end{aligned}$$
 
+Let $M = H(A-V^{-1})$ and $N = \sum_{i=1}^{H}(A \beta_i), \\$
+
+$f(\mu|B, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M^{-1}) \\$ 
 
 
 For $\sigma^2$,
