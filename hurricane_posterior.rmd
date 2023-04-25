@@ -128,9 +128,13 @@ $$\begin{aligned} f(B|\mu, \sigma^2, \Sigma, \gamma, Y)\propto
 & \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
 & det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
 \propto & \prod_{i=1}^{H} exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
-=& exp(\sum_{i=1}^{H} )
+=& exp(\frac{-1}{2}\sum_{i=1}^{H} \beta_{i}^\intercal ({D_i}^\intercal D_i\sigma^{-2} + A)\beta_i - 2\beta_i^\intercal(D_i^\intercal Y_i\sigma^{-2} - D_i^\intercal X_i \gamma + A \mu) \\
++& Y_i^\intercal Y_i \sigma^{-2} - 2Y_i^\intercal X_i \gamma \sigma^{-2} + \gamma^\intercal X_i^\intercal X_i \gamma \sigma^{-2} + \mu^\intercal A \mu )
 \end{aligned}$$
 
+Let $M = {D_i}^\intercal D_i\sigma^{-2} + A$ and $N = D_i^\intercal Y_i\sigma^{-2} - D_i^\intercal X_i \gamma + A \mu \\$,
+
+$f(B|\mu, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M{-1}) \\$ 
 
 
 For $\mu$,
