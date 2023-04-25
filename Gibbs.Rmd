@@ -50,7 +50,7 @@ train_data = dt[which(dt$id %in% train_id),]
 ```
 
 
-With the conditional posterior distributions calculated, we can utilized Gibbs sampling MCMC algorithm:
+With the conditional posterior distributions calculated, we use Gibbs sampling MCMC algorithm:
 ```{r Initialize parameters}
 #beta matrix
 beta_i <- function(dt, mu, sigma2, Sigma){
