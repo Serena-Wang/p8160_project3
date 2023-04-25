@@ -134,7 +134,7 @@ $$\begin{aligned} f(B|\mu, \sigma^2, \Sigma, \gamma, Y)\propto
 
 Let $M = {D_i}^\intercal \sigma^{-2}I_{n_i} D_i + A$ and $N = D_i^\intercal \sigma^{-2}I_{n_i} Y_i- D_i^\intercal \sigma^{-2}I_{n_i} X_i \gamma + A \mu , \\$
 
-$f(B|\mu, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M^{-1}) \\$ 
+Finally, we have $f(B|\mu, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M^{-1}) \\$ 
 
 
 For $\mu$,
@@ -147,17 +147,23 @@ $$\begin{aligned} f(\mu|B, \sigma^2, \Sigma, \gamma, Y)\propto
 
 Let $M = H(A-V^{-1})$ and $N = \sum_{i=1}^{H}(A \beta_i), \\$
 
-$f(\mu|B, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M^{-1}) \\$ 
+Finally, we have $f(\mu|B, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M^{-1}) \\$ 
 
 
 For $\sigma^2$,
 
 $$\begin{aligned} f(\sigma^2|B, \mu, \Sigma, \gamma, Y)\propto 
-& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)) \times \\
 & \frac{1}{\pi(\sigma^2+10^2)\sigma} \\
-=& exp(\sum_{i=1}^{H} )
+\approx& (\sigma^2)^{-1/2\sum_{i=1}^{H}n_i} exp(-\frac{1}{2\sigma^2}\sum_{i=1}^{H}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal (Y_i - D_{i}\beta_{i}-X_i\gamma)) \times \frac{1}{\sigma}\\
+=& (\sigma^2)^{-\frac{N+1}{2}}exp(-\frac{1}{2\sigma^2}\sum_{i=1}^{H}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal (Y_i - D_{i}\beta_{i}-X_i\gamma))
 \end{aligned}$$
 
+Note: since $\sigma^2$ is much smaller than $10^2$, we consider use $\frac{1}{\pi k^\prime \sigma}$, where $k^\prime$ is a constant, to approximate $\frac{1}{\pi(\sigma^2+10^2)\sigma}$.
+
+Let $shape = \frac{N-1}{2}$ and $rate = \frac{1}{2}\sum_{i=1}^{H}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal (Y_i - D_{i}\beta_{i}-X_i\gamma), \\$
+
+Finally, we have $f(\sigma^2|B, \mu, \Sigma, \gamma, Y) \sim Inverse Gamma(shape, rate) \\$ 
 
 
 For $A = \Sigma^{-1}$,
@@ -165,9 +171,14 @@ For $A = \Sigma^{-1}$,
 $$\begin{aligned} f(\Sigma^{-1}|B, \mu, \sigma^2, \gamma, Y)\propto 
 & det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\times \\
 & |A|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(SA)}{2}}) \\
-=& exp(\sum_{i=1}^{H} )
+=& det(A)^{\frac{H + \nu-5-1}{2}}exp(-\frac{1}{2} tr(SA + \sum_{i=1}^{H}(\beta_i-\mu)^\intercal A (\beta_i-\mu)))
 \end{aligned}$$
 
+Note: $Tr((k)_{1×1}) = k$.
+
+Let degree of freedom = $H + \nu$ and scale matrix = $, \\$
+
+Finally, we have $f(\Sigma^{-1}|B, \mu, \sigma^2, \gamma, Y) \sim Wishart(df, \text{scale matrix}) \\$ 
 
 For $\gamma$,
 
