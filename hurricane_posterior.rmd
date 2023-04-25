@@ -67,16 +67,16 @@ $$\begin{aligned}Y_i|\beta_i, \mu_i, \sigma^2, \Sigma, \gamma \sim & MVN(\beta_{
 
 where 
 
-$$Y_{i} = \begin{bmatrix}Y_i(t=6) \\Y_i(t=7) \\ \vdots \\ Y_i(t=t_j+6) \\ \vdots \\ Y_i(t =n_i+5) \end{bmatrix}_{n_i\times 1}$$
+$$Y_{i} = \begin{bmatrix}Y_i(t_0 + 6) \\Y_i(t_1 + 6) \\ \vdots \\ Y_i(t=t_j+6) \\ \vdots \\ Y_i(t = t_{n_{i-1}} + 6) \end{bmatrix}_{n_i\times 1}$$
 $$\begin{aligned}D_{i}(t) =& \begin{bmatrix} 1 & Y_i(t) & \Delta_{i,1}(t)&\Delta_{i,2}(t)& \Delta_{i,3}(t)\end{bmatrix} \\
-=&\begin{bmatrix} 1 & Y_i(t=0) & \Delta_{i,1}(t=0)&\Delta_{i,2}(t=0)& \Delta_{i,3}(t=0)\\
-1 & Y_i(t=1) & \Delta_{i,1}(t=1)&\Delta_{i,2}(t=1)& \Delta_{i,3}(t=1)\\ \dots\\ 1 & Y_i(t=t_j) & \Delta_{i,1}(t=t_j)&\Delta_{i,2}(t=t_j)& \Delta_{i,3}(t=t_j)\\\dots\\ 1 & Y_i(t = n_i-1 ) & \Delta_{n,1}(t=n_i-1)&\Delta_{n,2}(t=n_i-1)& \Delta_{n,3}(t=n_i-1)\end{bmatrix}_{n_i\times 5}\end{aligned}$$
+=&\begin{bmatrix} 1 & Y_i(t=t_0 ) & \Delta_{i,1}(t=t_0)&\Delta_{i,2}(t=t_0)& \Delta_{i,3}(t=t_0)\\
+1 & Y_i(t=t_1) & \Delta_{i,1}(t=t_1)&\Delta_{i,2}(t=t_1)& \Delta_{i,3}(t=t_1)\\ \dots\\ 1 & Y_i(t=t_j) & \Delta_{i,1}(t=t_j)&\Delta_{i,2}(t=t_j)& \Delta_{i,3}(t=t_j)\\\dots\\ 1 & Y_i(t = t_{n_{i-1}} ) & \Delta_{n,1}(t=t_{n_{i-1}})&\Delta_{n,2}(t=t_{n_{i-1}})& \Delta_{n,3}(t=t_{n_{i-1}})\end{bmatrix}_{n_i\times 5}\end{aligned}$$
 $$\beta_i = \begin{bmatrix} \beta_{0,i} \\\beta_{1,i}\\\beta_{2,i} \\\beta_{3,i}\\\beta_{4,i}\end{bmatrix}$$ $$X_i = \begin{bmatrix} x_{i,1} & x_{i,2} & x_{i,3}\end{bmatrix}_{1\times 3}$$ 
 $$\gamma = \begin{bmatrix} \gamma_1 \\ \gamma_2 \\ \gamma_3\end{bmatrix}_{3\times 1}$$
 
 Likelihood for the ith hurricane is 
 
-$$f(Y_i|\beta_i,\mu_i, \sigma^2, \Sigma, \gamma) = det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2})$$
+$$f(Y_i|\beta_i,\mu_i, \sigma^2, \Sigma, \gamma) = det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma) })$$
 
 To calculate the joint likelihood for $Y = \begin{bmatrix}Y_1 & Y_2 \dots Y_i \dots Y_H\end{bmatrix}^\intercal$, we denote total number of observations for all hurricanes as $N = \sum_{i=0}^{H} n_i$ where $n_i$ is the total number of observation for the ith hurricane and $H$ is the total number of hurricanes.
 
@@ -87,8 +87,8 @@ Design matrix for random effects for all hurricanes are in $D$. $D =\begin{bmatr
 
 Due to independence of each hurricane, the joint likelihood is 
 $$\begin{aligned}L_Y(B,\mu, \sigma^2, \Sigma,\gamma) =& \prod_{i=1}^{H} L_{Y_i}(\beta_i, \mu, \sigma^2, \Sigma,\gamma) \\
-=& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \\
-=& \frac{1}{\sigma^N}exp(-\frac{(Y-DB-X\gamma)^\intercal(Y-DB-X\gamma)}{2\sigma^2})\end{aligned}$$
+=& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)}) \\
+=& \frac{1}{\sigma^N}\prod_{i=1}^{H} exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma) })\end{aligned}$$
 
 ## Posterior
 
@@ -112,7 +112,7 @@ Final posterior
 
 $$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, \Sigma)  \times f(\mu)  \times f(\Sigma^{-1})  \times f(\sigma^2) \times f(\gamma) \\
 =& f(Y|B,\mu, \sigma^2, \Sigma,\gamma) \times f(B|\mu, A)  \times f(\mu)  \times f(A)  \times f(\sigma^2) \times f(\gamma) \\
-=& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+=& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)}) \times \\
 & det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2})\times \\
 & det(V)^{\frac{-1}{2}}exp({-\frac{\mu^\intercal V^{-1}\mu}{2}}) \times \\ 
 & |A|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(SA)}{2}}) \times \\
@@ -125,16 +125,16 @@ $$\begin{aligned} f(B,\mu, \sigma^2, \Sigma, \gamma |Y) \propto & f(Y|B,\mu, \si
 For B,
 
 $$\begin{aligned} f(B|\mu, \sigma^2, \Sigma, \gamma, Y)\propto  
-& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) \times \\
+& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)}) \times \\
 & det(A)^{H/2}\prod_{i=1}^{H} exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
-\propto & \prod_{i=1}^{H} exp(-\frac{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(Y_i - D_{i}\beta_{i}-X_i\gamma) }{2\sigma^2}) exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
-=& exp(\frac{-1}{2}\sum_{i=1}^{H} \beta_{i}^\intercal ({D_i}^\intercal D_i\sigma^{-2} + A)\beta_i - 2\beta_i^\intercal(D_i^\intercal Y_i\sigma^{-2} - D_i^\intercal X_i \gamma + A \mu) \\
-+& Y_i^\intercal Y_i \sigma^{-2} - 2Y_i^\intercal X_i \gamma \sigma^{-2} + \gamma^\intercal X_i^\intercal X_i \gamma \sigma^{-2} + \mu^\intercal A \mu )
+\propto & \prod_{i=1}^{H} exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)}) exp(-\frac{(\beta_i-\mu)^\intercal A (\beta_i-\mu)}{2}) \\
+=& exp(\frac{-1}{2}\sum_{i=1}^{H} \beta_{i}^\intercal ({D_i}^\intercal \sigma^{-2}I_{n_i} D_i + A)\beta_i - 2\beta_i^\intercal(D_i^\intercal \sigma^{-2}I_{n_i} Y_i - D_i^\intercal \sigma^{-2}I_{n_i} X_i \gamma + A \mu) \\
++& Y_i^\intercal \sigma^{-2}I_{n_i} Y_i  - 2Y_i^\intercal \sigma^{-2}I_{n_i} X_i \gamma  + \gamma^\intercal X_i^\intercal \sigma^{-2}I_{n_i} X_i \gamma  + \mu^\intercal A \mu )
 \end{aligned}$$
 
-Let $M = {D_i}^\intercal D_i\sigma^{-2} + A$ and $N = D_i^\intercal Y_i\sigma^{-2} - D_i^\intercal X_i \gamma + A \mu \\$,
+Let $M = {D_i}^\intercal \sigma^{-2}I_{n_i} D_i + A$ and $N = D_i^\intercal \sigma^{-2}I_{n_i} Y_i- D_i^\intercal \sigma^{-2}I_{n_i} X_i \gamma + A \mu , \\$
 
-$f(B|\mu, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M{-1}) \\$ 
+$f(B|\mu, \sigma^2, \Sigma, \gamma, Y) \sim MVN(M^{-1}N, M^{-1}) \\$ 
 
 
 For $\mu$,
