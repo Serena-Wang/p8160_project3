@@ -15,37 +15,45 @@ library(foreach)
 library(doParallel)
 ```
 
-
+As the day of year $x_{i,1}(t)$ and time $t$ are two variables in given model, we need to transform `time` into some suitable formats. Normally, records are taken every 6 hour at 00:00:00, 06:00:00, 12:00:00 and 18:00:00. However, some records are taken at other time points. These records are ineffective as there are no record 6 hour before or after those time points to help train or test given models. Thus, we remove those observations
 ```{r echo=FALSE}
-dt= read.csv("/Users/yujia/Downloads/hurrican703.csv")
-dt <- dt %>%
-  drop_na() %>%
-  janitor::clean_names() %>%
-   mutate(
-    time = gsub("[()]", "", time),
-    time = parse_datetime(time, "%y-%m-%d %H:%M:%S")
-  ) %>% 
+dt = read.csv("/Users/yujia/Downloads/hurrican703.csv") %>%
+  janitor::clean_names() %>% 
+  rename(year = season) %>% 
+  separate(time, into = c("date", "hour"), sep = " ") %>% 
   mutate(
-    month = month(time)
+    date = str_remove(date, "\\("),
+    hour = str_remove(hour, "\\)")
+  ) %>% 
+  mutate(month = str_match(date, "-\\s*(.*?)\\s*-")) %>% 
+  mutate(month = gsub("[-]", "", month)) %>% 
+  filter(hour == "00:00:00" | hour == "06:00:00" | hour == "12:00:00" | hour == "18:00:00") %>% 
+  mutate(
+    hour = str_replace(hour, ":00:00", ""),
+    hour = as.numeric(hour),
+    month = month[,1],
+    month = as.numeric(month),
+    nature = as.numeric(as.factor(nature))
   ) %>%
-    mutate(
-    day = day(time),
-    year = season,
-    time = hour(time)) %>%
-  select(-season) %>%
-  group_by(id)
+  mutate(lat_change = c(NA, diff(latitude)),
+         lng_change = c(NA, diff(longitude)),
+         wind_change = c(NA, diff(wind_kt)))
 ```
 
-```{r}
-#id 
-#data partition 
+Then, we randomly partition the data into 80:20 to train the model and test the model performance:
+```{r echo=FALSE}
+set.seed(1)
+id = unique(dt$id)
+num_id = length(id)
+train_id = sample(id, 0.8*num_id)
+train_data = dt[which(dt$id %in% train_id),]
 ```
 
 
-```{r}
-# Initialize parameters:
+With the conditional posterior distributions calculated, we can utilized Gibbs sampling MCMC algorithm:
+```{r Initialize parameters}
 #beta matrix
-beta_i <- function(dt, muvec, sigma2, Sigma){
+beta_i <- function(dt, mu, sigma2, Sigma){
    n = length(dt)
    B = NULL
    for (i in 1:n){
@@ -65,11 +73,11 @@ beta_i <- function(dt, muvec, sigma2, Sigma){
 #Sigma by inverse wishart dist
 Sigma <- function(B, mu){
     n = nrow(B)
-    S = diag(0,ncol(B),ncol(B))
+    S = diag(0, ncol(B), ncol(B))
     for (i in 1:n){
         S = S + (B[i,] - mu) %*% t(B[i,] - mu)
     }
-    omega = S + diag(1,ncol(B),ncol(B)) #scale matrix
+    omega = S + diag(1, ncol(B), ncol(B)) #scale matrix
     Sigma = rinvwishart(1, nu = n, Omega = omega, checkSymmetry = F)
     return(Sigma)
 }
