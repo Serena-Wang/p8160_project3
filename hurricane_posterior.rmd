@@ -174,7 +174,7 @@ $$\begin{aligned} f(\Sigma^{-1}|B, \mu, \sigma^2, \gamma, Y)\propto
 =& det(A)^{\frac{H + \nu-5-1}{2}}exp(-\frac{1}{2} tr(SA + \sum_{i=1}^{H}(\beta_i-\mu)^\intercal A (\beta_i-\mu)))
 \end{aligned}$$
 
-Note: $Tr((k)_{1×1}) = k$.
+Note: $Tr((k)_{1\times1}) = k$.
 
 Let degree of freedom = $H + \nu$ and scale matrix = $, \\$
 
