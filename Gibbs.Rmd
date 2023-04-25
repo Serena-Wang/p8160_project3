@@ -1,0 +1,174 @@
+---
+title: "task 2"
+date: "2023-04-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(lubridate)
+library(extraDistr)
+library(MASS)
+library(progress)
+library(foreach)
+library(doParallel)
+```
+
+
+```{r echo=FALSE}
+dt= read.csv("/Users/yujia/Downloads/hurrican703.csv")
+dt <- dt %>%
+  drop_na() %>%
+  janitor::clean_names() %>%
+   mutate(
+    time = gsub("[()]", "", time),
+    time = parse_datetime(time, "%y-%m-%d %H:%M:%S")
+  ) %>% 
+  mutate(
+    month = month(time)
+  ) %>%
+    mutate(
+    day = day(time),
+    year = season,
+    time = hour(time)) %>%
+  select(-season) %>%
+  group_by(id)
+```
+
+```{r}
+#id 
+#data partition 
+```
+
+
+```{r}
+# Initialize parameters:
+#beta matrix
+beta_i <- function(dt, muvec, sigma2, Sigma){
+   n = length(dt)
+   B = NULL
+   for (i in 1:n){
+       # stuffs to define the distribution
+       X = as.matrix(dt[[i]][,-1]) 
+       y = as.vector(dt[[i]][,1])
+       V = sigma2^(-1) * t(X) %*% X + solve(Sigma)
+       M = sigma2^(-1) * t(y) %*% X + muvec %*% solve(Sigma)
+       vcov_bi = solve(V)
+       mean_bi = vcov_bi %*% t(M) 
+       bi = mvrnorm(1, mu = mean_bi, Sigma = vcov_bi)
+       B = rbind(B, bi)
+   }
+   return(as.matrix(B))
+}
+
+#Sigma by inverse wishart dist
+Sigma <- function(B, mu){
+    n = nrow(B)
+    S = diag(0,ncol(B),ncol(B))
+    for (i in 1:n){
+        S = S + (B[i,] - mu) %*% t(B[i,] - mu)
+    }
+    omega = S + diag(1,ncol(B),ncol(B)) #scale matrix
+    Sigma = rinvwishart(1, nu = n, Omega = omega, checkSymmetry = F)
+    return(Sigma)
+}
+
+#mu 
+mu <- function(B, Sigma){
+    n = nrow(B)
+    col_mu = colMeans(B)
+    mu = mvrnorm(1, col_mu, Sigma/n)
+    return(mu)
+}
+
+#sigma square 
+sigma2 <- function(dt, B) {
+  alpha = nrow(dt)/2
+  beta = beta_gamma(dt, B)
+  sigmasq = extraDistr::rinvgamma(1, alpha = alpha, beta = beta) 
+  return(sigmasq)
+}
+
+```
+
+
+```{r}
+#Gibbs
+# Function to compute log likelihood of data given parameters
+loglik <- function(dt, beta, mu, sigma2) {
+  n <- length(dt)
+  loglik <- 0
+  for (i in 1:n) {
+    y <- dt[[i]][, 1]
+    X <- as.matrix(dt[[i]][,-1])
+    loglik <- loglik + dmvnorm(y, mean = X %*% beta[i,], sigma = sqrt(sigma2) * diag(nrow(y)), log = TRUE)
+  }
+  return(sum(loglik))
+}
+
+# Function to run MCMC algorithm
+run_mcmc <- function(dt, n_iter, burn_in) {
+  n <- length(dt)
+  p <- ncol(dt[[1]]) - 1
+  
+  # Initialize parameters
+  beta <- matrix(rnorm(n * p), nrow = n)
+  mu <- rep(0, p)
+  Sigma <- diag(p)
+  sigma2 <- 1
+  
+  # Create matrix to store samples
+  beta_samples <- matrix(0, nrow = n_iter, ncol = n * p)
+  mu_samples <- matrix(0, nrow = n_iter, ncol = p)
+  Sigma_samples <- array(0, dim = c(p, p, n_iter))
+  sigma2_samples <- rep(0, n_iter)
+  loglik_samples <- rep(0, n_iter)
+  
+  for (i in 1:n_iter) {
+    
+    # Update beta_i
+    beta <- beta_i(dt, mu, sigma2, Sigma)
+    
+    # Update mu
+    mu <- mu(beta, Sigma)
+    
+    # Update Sigma
+    Sigma <- Sigma(beta, mu)
+    
+    # Update sigma2
+    sigma2 <- sigma2(dt, beta)
+    
+    # Save samples after burn-in
+    if (i > burn_in) {
+      beta_samples[i - burn_in,] <- as.vector(beta)
+      mu_samples[i - burn_in,] <- mu
+      Sigma_samples[,,i - burn_in] <- Sigma
+      sigma2_samples[i - burn_in] <- sigma2
+      loglik_samples[i - burn_in] <- loglik(dt, beta, mu, sigma2)
+    }
+  }
+  
+  return(list(beta = beta_samples, mu = mu_samples, Sigma = Sigma_samples, sigma2 = sigma2_samples, loglik = loglik_samples))
+}
+
+```
+
+
+```{r}
+# Check for convergence with autocorrelation plots
+library(coda)
+
+# Extract MCMC samples from list
+mcmc_list <- run_mcmc(dt, n_iter = 5000, burn_in = 1000)
+beta_samples <- mcmc_list$beta
+
+```
+
+
+
+
+
+
+
+
