@@ -14,5 +14,7 @@ data <- data %>%
   arrange(Hour, .by_group = TRUE) %>%
   mutate(Wind_change = Wind.kt - lag(Wind.kt, 1),
          Lat_change = Latitude - lag(Latitude, 1),
-         Long_change = Longitude - lag(Longitude, 1))
+         Long_change = Longitude - lag(Longitude, 1),
+         Wind_prev = lag(Wind.kt, 1)) %>%
+  ungroup()
 save(data, file = "data.RData")
