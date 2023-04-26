@@ -14,6 +14,7 @@ library(tidyverse)
 library(lme4)
 library(LaplacesDemon)
 library(purrr)
+library(MASS)
 ```
 
 ## load data
@@ -227,12 +228,14 @@ B_post <- function(D, sigma_squared, A, X, gamma, mu){
   for (i in 1:H){
     curr_hurricane_idx <- ith_hurricane_idx[[i]]
     n_i <- length(curr_hurricane_idx)
-    X_i <- X[curr_hurricane_idx,]
-    Y_i <- Y[curr_hurricane_idx,]
-    D_i <- D[curr_hurricane_idx,]
-    M_i <- t(D_i)%*% 
-      (1/sigma_squared*diag(n_i)) %*% D_i + A
-    N_i<- t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% Y_i - t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% X_i%*%gamma + A%*%mu
+    X_i <- X[curr_hurricane_idx,,drop = FALSE]
+    Y_i <- Y[curr_hurricane_idx,,drop = FALSE]
+    # retain matrix form
+    D_i <- D[curr_hurricane_idx,,drop = FALSE] 
+    
+    M_i <- t(D_i)%*% ((1/sigma_squared)*diag(n_i)) %*% D_i + A
+    
+    N_i<- t(D_i)%*% ((1/sigma_squared)*diag(n_i)) %*% Y_i - t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% X_i%*%gamma + A%*%mu
     
     B_i <- mvrnorm(1, mu = solve(M_i) %*% N_i, Sigma = solve(M_i))
     B <- cbind(B, B_i)
@@ -245,23 +248,23 @@ B_post <- function(D, sigma_squared, A, X, gamma, mu){
 
 ```{r}
 mu_post <- function(A, V, B){
-  M <- M %*% A - solve(V)
-  N <- NULL
+  M <- H* A - solve(V)
   for (i in 1:H){
-    N <- N + A %*% B[,i]
+    N <- N + A %*% B[,i,drop = FALSE]
   }
   mu <-  mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M))
+  
+  return(mu)
 }
 ```
 
 ```{r}
 A_post <- function(nu, B, mu, S){
   df <- H + nu
-  scale <- NULL
   
-  sum = NULL
+  sum = 0
   for (i in 1:H){
-    sum = sum + (B[,i] - mu) %*% t((B[,i] - mu))
+    sum = sum + (B[,i,drop = FALSE] - mu) %*% t((B[,i,drop = FALSE] - mu))
   }
   
   scale <- solve(S+ sum)
@@ -274,17 +277,17 @@ A_post <- function(nu, B, mu, S){
 ```
 
 ```{r}
-gamma_post <- function(X,Y, D,B){
+gamma_post <- function(X,Y, D,B, sigma_squared){
   M <- NULL
   N <- NULL
   for (i in 1:H){
     curr_hurricane_idx <- ith_hurricane_idx[[i]]
-    X_i <- X[curr_hurricane_idx,]
-    Y_i <- Y[curr_hurricane_idx,]
-    D_i <- D[curr_hurricane_idx,]
-    M = M + t(X_i) %*% (1/sigma_squared*diag(n_i))  %*% X_i
+    X_i <- X[curr_hurricane_idx,,drop = FALSE]
+    Y_i <- Y[curr_hurricane_idx,,drop = FALSE]
+    D_i <- D[curr_hurricane_idx,,drop = FALSE]
+    M = M + t(X_i) %*% ((1/sigma_squared)*diag(n_i))  %*% X_i
     
-    N = N + t(X_i) %*% (1/sigma_squared*diag(n_i))  %*% Y_i - t(X_i) %*% (1/sigma_squared*diag(n_i)) %*% D_i %*% B[,i]
+    N = N + t(X_i) %*% ((1/sigma_squared)*diag(n_i))  %*% Y_i - t(X_i) %*% (1/sigma_squared*diag(n_i)) %*% D_i %*% B[,i,drop = FALSE]
     
   }
   M = M+ 400*diag(3)
@@ -302,7 +305,7 @@ test_sigma_squared_post <- function(Y, D, B , X, gamma){
   shape <- (nrow(D)-1)/2
   
   DB <- D%*%B
-  Y_minus_mu <- Y-DB[,1]- X%*%gamma
+  Y_minus_mu <- Y-DB[,1,drop = FALSE]- X%*%gamma
   
   rate <-t(Y_minus_mu)%*%(Y_minus_mu)/2
   
@@ -320,13 +323,15 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
                                      start_gamma, 
                                      start_mu,
                                      V,
+                                     S,
                                      X,
                                      D,
                                      Y,
-                                     nitr = 10000){
+                                     nitr = 100,
+                                     nu = 5){
   B_post_results <- list()
   mu_post_reulsts <- list()
-  A__post_results <- list()
+  A_post_results <- list()
   gamma_post_results <- list()
   sigma_squared_post_results <- list()
   
@@ -340,6 +345,7 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
   sigma_squared_post_results[[1]] <-start_sigma_squared
   
   for (i in 2:nitr){
+
     B <- B_post(D, 
                 sigma_squared_post_results[[i-1]], 
                 A_post_results[[i-1]], 
@@ -358,7 +364,8 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     gamma <- gamma_post(X,
                         Y, 
                         D,
-                        B)
+                        B,
+                        sigma_squared_post_results[[i-1]])
     
     # sigma_squared on its own random walk
     # not sure it works though
@@ -393,5 +400,28 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
   ))
   
 }
+```
+
+```{r}
+V <- .8 * diag(5)
+V[lower.tri(V)] <- 0.1
+V[upper.tri(V)] <- 0.1
+
+S <- .7 * diag(5)
+S[lower.tri(S)] <- 0.2
+S[upper.tri(S)] <- 0.2
+
+
+
+test = hurricane_gibbs_sampling(start_sigma_squared = 1, 
+                                start_A = solve(S),
+                                start_gamma = gamma, 
+                                start_mu = rowMeans(B) %>% as.matrix(),
+                                V = V ,
+                                S = S,
+                                X,
+                                D,
+                                Y)
+save(test,file = "test.RData")
 ```
 
