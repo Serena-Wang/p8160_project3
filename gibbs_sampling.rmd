@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lme4)
 library(LaplacesDemon)
+library(purrr)
 ```
 
 ## load data
@@ -209,6 +210,10 @@ hist(chain)
 
 ```{r}
 X_with_id <- cbind(as.numeric(factor(data$ID)), X)
+#number of hurricanes
+H <- max(X_with_id[,1])
+ith_hurricane_idx <- 1:H |>
+  map(\(i) which(X_with_id[,1] == i))
 ```
 
 
@@ -216,18 +221,15 @@ B posterior
 ```{r}
 # to get B transpose --> need to transpose B
 # B is 5 x H
-B_post <- function(D, sigma_squared, A, X_with_id, gamma, mu){
+B_post <- function(D, sigma_squared, A, X, gamma, mu){
   B <- NULL
-  #number of hurricanes
-  H <- max(X_with_id[,1])
   total_obs <- nrow(D)
   for (i in 1:H){
-    # can map this to a list
-    ith_hurricane_idx <- which(X_with_id[,1] == i)
-    n_i <- length(ith_hurricane_idx)
-    X_i <- X_with_id[ith_hurricane_idx,][,-1]
-    Y_i <- Y[ith_hurricane_idx,]
-    D_i <- D[ith_hurricane_idx,]
+    curr_hurricane_idx <- ith_hurricane_idx[[i]]
+    n_i <- length(curr_hurricane_idx)
+    X_i <- X[curr_hurricane_idx,]
+    Y_i <- Y[curr_hurricane_idx,]
+    D_i <- D[curr_hurricane_idx,]
     M_i <- t(D_i)%*% 
       (1/sigma_squared*diag(n_i)) %*% D_i + A
     N_i<- t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% Y_i - t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% X_i%*%gamma + A%*%mu
@@ -276,9 +278,10 @@ gamma_post <- function(X,Y, D,B){
   M <- NULL
   N <- NULL
   for (i in 1:H){
-    X_i <- X_with_id[ith_hurricane_idx,][,-1]
-    Y_i <- Y[ith_hurricane_idx,]
-    D_i <- D[ith_hurricane_idx,]
+    curr_hurricane_idx <- ith_hurricane_idx[[i]]
+    X_i <- X[curr_hurricane_idx,]
+    Y_i <- Y[curr_hurricane_idx,]
+    D_i <- D[curr_hurricane_idx,]
     M = M + t(X_i) %*% (1/sigma_squared*diag(n_i))  %*% X_i
     
     N = N + t(X_i) %*% (1/sigma_squared*diag(n_i))  %*% Y_i - t(X_i) %*% (1/sigma_squared*diag(n_i)) %*% D_i %*% B[,i]
