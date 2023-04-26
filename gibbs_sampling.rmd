@@ -1,5 +1,5 @@
 ---
-title: "gibbs_sampling.rmd"
+title: "gibbs_sampling"
 author: "Yijin Wang"
 date: "2023-04-26"
 output: pdf_document
@@ -33,14 +33,19 @@ summary(glmm)
 ```{r}
 glmm_summary <- summary(glmm)
 gamma_init <- glmm_summary$coefficients%>%as.matrix() %>%
-  as.data.frame()  %>% slice(-1) %>% pull(Estimate)
+  as.data.frame() %>% slice(-1) %>% pull(Estimate)
 ```
 
+$$\begin{aligned} f(\sigma^2|B, \mu, \Sigma, \gamma, Y)\propto 
+& \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)) \times \\
+& \frac{1}{\pi(\sigma^2+10^2)\sigma} \\
+=& \frac{1}{\sigma^N}exp(-\frac{(Y-DB-X\gamma)^\intercal(Y-DB-X\gamma)}{2\sigma^2}) \times \\
+& \frac{1}{\pi(\sigma^2+10^2)\sigma}\end{aligned}$$
 
 ```{r}
 # our target distribution (posterior conditional distribution) for sigma^2
 # is too complicated. Try random walk with Metropolis hasting
-# Use uniform distribution as proposed function
+# Use normal distribution as transition function
 
 #' posterior for sigma squared
 #' @param sigma_squared double
@@ -52,20 +57,49 @@ gamma_init <- glmm_summary$coefficients%>%as.matrix() %>%
 #' 
 #' @return posterior value for sigma squared with the given matrices
 sigma_squared_posterior <- function(sigma_squared, Y, D, B, X, gamma){
+  N <- length(Y)
+  DB <- D%*%B
+  Y_minus_mu <- Y-DB[,1]- X%*%gamma
+  if (sigma_squared>0){
+    sigma <- sqrt(sigma_squared)
+    
+  } else{
+    return(0)
+  }
+  likelihood <- (1/(sigma^N)) *exp(t(Y_minus_mu)%*%(Y_minus_mu)/(-2*sigma_squared))
+  prior<- (1/(sigma*pi*(sigma_squared + 100)))
+
+  return (likelihood*prior)
+}
+
+```
+
+```{r}
+sigma_squared_log_posterior <- function(sigma_squared, Y, D, B, X, gamma){
+ 
   N = length(Y)
   DB <- D%*%B
   Y_minus_mu <- Y-DB[,1]- X%*%gamma
-  sigma <- sqrt(sigma_squared)
-  return ((1/(sigma^N)) *exp(t(Y_minus_mu)%*%(Y_minus_mu)/(-2*sigma_squared)) * (1/(sigma*pi*(sigma_squared + 100))))
+  
+  if (sigma_squared>0){
+    sigma <- sqrt(sigma_squared)
+    
+  } else{
+    # avoid -inf :) 
+    return(-1e10)
+  }
+  
+  log_likelihood <- (-N)* log(sigma) + (t(Y_minus_mu)%*%(Y_minus_mu)/(-2*sigma_squared))
+  log_prior <- -log(sigma*pi*(sigma_squared + 100))
+  return (log_likelihood+log_prior)
 }
-
 ```
 
 ```{r}
 #' calculate next value for sigma squared in metropolis hasting random walk  
 #' https://towardsdatascience.com/from-scratch-bayesian-inference-markov-chain-monte-carlo-and-metropolis-hastings-in-python-ef21a29e25a
 #' @param curr current sigma squared value
-#' @param a window length in transition distribution Unif(curr-a, curr +a)
+#' @param a sd in transition distribution Normal(curr, a)
 #' @param Y full response vector in shape N x 1 where N is the total number of observations in the data set
 #' @param D full design matrix for random effects for all hurricanes. Its shape is N x 5.
 #' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
@@ -75,24 +109,32 @@ sigma_squared_posterior <- function(sigma_squared, Y, D, B, X, gamma){
 #' @return next value for sigma squared in metropolis hasting random walk  
 metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma){
   
-  prop <- curr + (runif(1)-0.5)*2*a
+   # for (i in 1:100){
+   #   prop <- prop <- curr + rnorm(1,mean=0, sd=a)
+   #   if (prop >0){
+   #     break
+   #   }
+   # }
   
-  prop_post <- sigma_squared_posterior(prop, Y, D, B, X, gamma)
+  prop <- curr + rnorm(1,mean=0, sd=a)
   
-  curr_post <- sigma_squared_posterior(curr, Y, D, B, X, gamma)
   
-  print("Prop")
-  print(prop)
-  print(prop_post)
-  print("curr")
-  print(curr)
-  print(curr_post)
+  prop_post <- sigma_squared_log_posterior(prop, Y, D, B, X, gamma)
   
-  if(curr_post == 0) {
-    return (prop)
-  }
+  curr_post <- sigma_squared_log_posterior(curr, Y, D, B, X, gamma)
   
-  posterior_ratio <-prop_post/curr_post
+  # print("Prop")
+  # print(prop)
+  # print("Prop log post")
+  # print(prop_post)
+  # print("curr")
+  # print(curr)
+  # print("curr log post")
+  # print(curr_post)
+  # 
+  posterior_ratio <- exp(prop_post - curr_post)
+  #posterior_ratio <- exp(prop_post + log(pnorm(curr)) - curr_post - log(pnorm(prop)))
+  #posterior_ratio <- prop_post /curr_post
   
   # acceptance prob
   alpha = min(posterior_ratio, 1)
@@ -117,7 +159,7 @@ metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20,
   chain <- rep(NA, numtocompute)
   chain[1] <- start_sigma_squared
   for (i in 2:numtocompute) {
-    print(i)
+    #print(i)
     chain[i] <- metropolis_hasting_sigma_squared_next_val(chain[i-1],a,Y, D, B, X, gamma)
   }
   return (chain)
@@ -147,13 +189,14 @@ gamma <- append(gamma, 0, after=11) %>% as.matrix()
 ```
 
 ```{r}
-chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 0.001, 
-                                             numtocompute = 400, 
-                                             a = 1, Y, D, B, X, gamma)
+chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 0.000005, 
+                                             numtocompute = 2000, 
+                                             a = 0.000008, Y, D, B, X, gamma)
 ```
 
 ```{r}
-plot(chain)
+plot(chain, type='l')
+#, ylim=c(9.008e-07, 10.08e-07))
 ```
 
 ```{r}
