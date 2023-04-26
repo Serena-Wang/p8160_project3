@@ -172,7 +172,7 @@ metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20,
 ```{r}
 a <- 1
 Y <- as.matrix(data$Wind.kt)
-D <- data %>% mutate(intercept = 1) %>% select(intercept, Wind_prev, Lat_change, Long_change, Wind_change) %>% as.matrix()
+D <- data %>% mutate(intercept = 1) %>% select(intercept, Wind_prev, Lat_change, Long_change, Wind_change)%>% as.matrix()
 X <- data  %>%
   mutate(index =1:nrow(data))%>%
   group_by(index) %>%
@@ -249,6 +249,7 @@ B_post <- function(D, sigma_squared, A, X, gamma, mu){
 ```{r}
 mu_post <- function(A, V, B){
   M <- H* A - solve(V)
+  N <- 0
   for (i in 1:H){
     N <- N + A %*% B[,i,drop = FALSE]
   }
@@ -269,30 +270,31 @@ A_post <- function(nu, B, mu, S){
   
   scale <- solve(S+ sum)
   
-  A <- rwishart(nu = df, S = scale)
+  A <- matrixsampling::rwishart(n = 1, nu = df, Sigma = scale, checkSymmetry = F)
   
-  
+  A <- array(A[, , 1], dim=c(5, 5)) 
   return (A)
 }
 ```
 
 ```{r}
 gamma_post <- function(X,Y, D,B, sigma_squared){
-  M <- NULL
-  N <- NULL
+  M <- 0
+  N <- 0
   for (i in 1:H){
     curr_hurricane_idx <- ith_hurricane_idx[[i]]
+    n_i <- length(curr_hurricane_idx)
     X_i <- X[curr_hurricane_idx,,drop = FALSE]
     Y_i <- Y[curr_hurricane_idx,,drop = FALSE]
     D_i <- D[curr_hurricane_idx,,drop = FALSE]
-    M = M + t(X_i) %*% ((1/sigma_squared)*diag(n_i))  %*% X_i
+    M = M + t(X_i) %*% ((1/sigma_squared)*diag(n_i)) %*% X_i
     
     N = N + t(X_i) %*% ((1/sigma_squared)*diag(n_i))  %*% Y_i - t(X_i) %*% (1/sigma_squared*diag(n_i)) %*% D_i %*% B[,i,drop = FALSE]
     
   }
-  M = M+ 400*diag(3)
+  M = M+ 400*diag(16)
   
-  gamma <- mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M))
+  gamma <- mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M)) %>% as.matrix()
   
   return(gamma)
 }
@@ -345,6 +347,8 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
   sigma_squared_post_results[[1]] <-start_sigma_squared
   
   for (i in 2:nitr){
+    
+    print(i)
 
     B <- B_post(D, 
                 sigma_squared_post_results[[i-1]], 
@@ -396,7 +400,7 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     mu = mu_post_reulsts,
     A = A_post_results,
     gamma = gamma_post_results,
-    sigma_squared = sigma_squared
+    sigma_squared = sigma_squared_post_results
   ))
   
 }
