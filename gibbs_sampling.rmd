@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, message = FALSE}
 library(tidyverse)
 library(lme4)
+library(LaplacesDemon)
 ```
 
 ## load data
@@ -201,5 +202,70 @@ plot(chain, type='l')
 
 ```{r}
 hist(chain)
+```
+
+
+## Gibbs Sampling
+
+```{r}
+X_with_id <- cbind(as.numeric(factor(data$ID)), X)
+```
+
+
+B posterior
+```{r}
+# to get B transpose --> need to transpose B
+# B is 5 x H
+B_post <- function(D, sigma_squared, A, X_with_id, gamma, mu){
+  B <- NULL
+  #number of hurricanes
+  H <- max(X_with_id[,1])
+  total_obs <- nrow(D)
+  for (i in 1:H){
+    # can map this to a list
+    ith_hurricane_idx <- which(X_with_id[,1] == i)
+    n_i <- length(ith_hurricane_idx)
+    X_i <- X_with_id[ith_hurricane_idx,][,-1]
+    Y_i <- Y[ith_hurricane_idx,]
+    D_i <- D[ith_hurricane_idx,]
+    M_i <- t(D_i)%*% 
+      (1/sigma_squared*diag(n_i)) %*% D_i + A
+    N_i<- t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% Y_i - t(D_i)%*% (1/sigma_squared*diag(n_i)) %*% X_i%*%gamma + A%*%mu
+    
+    B_i <- mvrnorm(1, mu = solve(M_i) %*% N_i, Sigma = solve(M_i))
+    B <- cbind(B, B_i)
+  }
+  
+  return (B)
+}
+```
+
+
+```{r}
+mu_post <- function(A, V, B){
+  #wait :) 
+}
+```
+
+```{r}
+A_post <- function(H, nu, B, mu, S){
+  df <- H + nu
+  scale <- NULL
+  
+  sum = NULL
+  for (i in 1:H){
+    sum = sum + (B[,i] - mu) %*% t((B[,i] - mu))
+  }
+  
+  scale <- solve(S+ sum)
+  
+  A <- rwishart(nu = df, S = scale)
+  
+  return (A)
+}
+```
+
+```{r}
+
 ```
 
