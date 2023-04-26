@@ -255,7 +255,7 @@ mu_post <- function(A, V, B){
 ```
 
 ```{r}
-A_post <- function(H, nu, B, mu, S){
+A_post <- function(nu, B, mu, S){
   df <- H + nu
   scale <- NULL
   
@@ -292,6 +292,106 @@ gamma_post <- function(X,Y, D,B){
   gamma <- mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M))
   
   return(gamma)
+}
+```
+
+
+```{r}
+test_sigma_squared_post <- function(Y, D, B , X, gamma){
+  
+  shape <- (nrow(D)-1)/2
+  
+  DB <- D%*%B
+  Y_minus_mu <- Y-DB[,1]- X%*%gamma
+  
+  rate <-t(Y_minus_mu)%*%(Y_minus_mu)/2
+  
+  
+  sigma_squared <- rinvgamma(1, shape = shape, scale = rate)
+  
+  return(sigma_squared)
+}
+```
+
+
+```{r}
+hurricane_gibbs_sampling <- function(start_sigma_squared, 
+                                     start_A,
+                                     start_gamma, 
+                                     start_mu,
+                                     V,
+                                     X,
+                                     D,
+                                     Y,
+                                     nitr = 10000){
+  B_post_results <- list()
+  mu_post_reulsts <- list()
+  A__post_results <- list()
+  gamma_post_results <- list()
+  sigma_squared_post_results <- list()
+  
+  # B first
+  B <- B_post(D, start_sigma_squared, start_A, X, start_gamma, start_mu)
+  
+  B_post_results[[1]] <- B
+  mu_post_reulsts[[1]] <- start_mu
+  A_post_results[[1]] <- start_A
+  gamma_post_results[[1]] <-start_gamma
+  sigma_squared_post_results[[1]] <-start_sigma_squared
+  
+  for (i in 2:nitr){
+    B <- B_post(D, 
+                sigma_squared_post_results[[i-1]], 
+                A_post_results[[i-1]], 
+                X, 
+                gamma_post_results[[i-1]], 
+                mu_post_reulsts[[i-1]])
+    
+    mu <- mu_post(A_post_results[[i-1]], 
+                  V, 
+                  B)
+    A <- A_post(nu, 
+                B, 
+                mu, 
+                S)
+      
+    gamma <- gamma_post(X,
+                        Y, 
+                        D,
+                        B)
+    
+    # sigma_squared on its own random walk
+    # not sure it works though
+    # sigma_squared_chain <- metropolis_hasting_sigma_squared(
+    #   start_sigma_squared = start_sigma_squared, 
+    #   numtocompute = 2000, 
+    #   a = 0.000008, 
+    #   Y, 
+    #   D, 
+    #   B, 
+    #   X, 
+    #   gamma)
+    # 
+    # sigma_squared <- mean(chain)
+    
+    sigma_squared <- test_sigma_squared_post(Y, D, B , X, gamma)
+    
+    # collect results
+    B_post_results[[i]] <- B
+    mu_post_reulsts[[i]] <- mu
+    A_post_results[[i]] <- A
+    gamma_post_results[[i]] <-gamma
+    sigma_squared_post_results[[i]] <-sigma_squared
+  }
+  
+  return(list(
+    B = B_post_results,
+    mu = mu_post_reulsts,
+    A = A_post_results,
+    gamma = gamma_post_results,
+    sigma_squared = sigma_squared
+  ))
+  
 }
 ```
 
