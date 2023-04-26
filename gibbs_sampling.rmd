@@ -1,0 +1,162 @@
+---
+title: "gibbs_sampling.rmd"
+author: "Yijin Wang"
+date: "2023-04-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message = FALSE}
+library(tidyverse)
+library(lme4)
+```
+
+## load data
+
+```{r}
+load("data.RData")
+data <- data %>% drop_na()
+```
+
+```{r}
+# decide initial values for mcmc by fitting a simple glm :)
+
+glmm <- glmer(Wind.kt ~ Month + Season + Nature + 
+                (1 +Wind_prev + Lat_change+ Long_change+Wind_change |ID),
+              family = "gaussian", data = data)
+summary(glmm)
+```
+
+```{r}
+glmm_summary <- summary(glmm)
+gamma_init <- glmm_summary$coefficients%>%as.matrix() %>%
+  as.data.frame()  %>% slice(-1) %>% pull(Estimate)
+```
+
+
+```{r}
+# our target distribution (posterior conditional distribution) for sigma^2
+# is too complicated. Try random walk with Metropolis hasting
+# Use uniform distribution as proposed function
+
+#' posterior for sigma squared
+#' @param sigma_squared double
+#' @param Y full response vector in shape N x 1 where N is the total number of observations in the data set
+#' @param D full design matrix for random effects for all hurricanes. Its shape is N x 5.
+#' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
+#' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 3. 
+#' @param gamma fixed effects coefficients matrix in shape 3 x 1. 
+#' 
+#' @return posterior value for sigma squared with the given matrices
+sigma_squared_posterior <- function(sigma_squared, Y, D, B, X, gamma){
+  N = length(Y)
+  DB <- D%*%B
+  Y_minus_mu <- Y-DB[,1]- X%*%gamma
+  sigma <- sqrt(sigma_squared)
+  return ((1/(sigma^N)) *exp(t(Y_minus_mu)%*%(Y_minus_mu)/(-2*sigma_squared)) * (1/(sigma*pi*(sigma_squared + 100))))
+}
+
+```
+
+```{r}
+#' calculate next value for sigma squared in metropolis hasting random walk  
+#' https://towardsdatascience.com/from-scratch-bayesian-inference-markov-chain-monte-carlo-and-metropolis-hastings-in-python-ef21a29e25a
+#' @param curr current sigma squared value
+#' @param a window length in transition distribution Unif(curr-a, curr +a)
+#' @param Y full response vector in shape N x 1 where N is the total number of observations in the data set
+#' @param D full design matrix for random effects for all hurricanes. Its shape is N x 5.
+#' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
+#' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 3. 
+#' @param gamma fixed effects coefficients matrix in shape 3 x 1. 
+#' 
+#' @return next value for sigma squared in metropolis hasting random walk  
+metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma){
+  
+  prop <- curr + (runif(1)-0.5)*2*a
+  
+  prop_post <- sigma_squared_posterior(prop, Y, D, B, X, gamma)
+  
+  curr_post <- sigma_squared_posterior(curr, Y, D, B, X, gamma)
+  
+  print("Prop")
+  print(prop)
+  print(prop_post)
+  print("curr")
+  print(curr)
+  print(curr_post)
+  
+  if(curr_post == 0) {
+    return (prop)
+  }
+  
+  posterior_ratio <-prop_post/curr_post
+  
+  # acceptance prob
+  alpha = min(posterior_ratio, 1)
+  
+  # random sample from unif(0,1)
+  u <- runif(n = 1)
+  
+  if (u < alpha) {
+    # accept
+   return (prop)
+  } else {
+    return (curr)
+  }
+}
+```
+
+```{r}
+metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20, 
+                                             numtocompute = 1000, 
+                                             a = 2,
+                                             Y, D, B, X, gamma){
+  chain <- rep(NA, numtocompute)
+  chain[1] <- start_sigma_squared
+  for (i in 2:numtocompute) {
+    print(i)
+    chain[i] <- metropolis_hasting_sigma_squared_next_val(chain[i-1],a,Y, D, B, X, gamma)
+  }
+  return (chain)
+}
+```
+
+```{r}
+a <- 1
+Y <- as.matrix(data$Wind.kt)
+D <- data %>% mutate(intercept = 1) %>% select(intercept, Wind_prev, Lat_change, Long_change, Wind_change) %>% as.matrix()
+X <- data  %>%
+  mutate(index =1:nrow(data))%>%
+  group_by(index) %>%
+  select(Month, Season, Nature) %>%
+  mutate(n = 1)%>% 
+  pivot_wider(names_from = Month, values_from=n, values_fill=0) %>% 
+  mutate(n = 1)%>% 
+  pivot_wider(names_from = Nature, values_from=n, values_fill=0) %>% 
+  ungroup() %>%
+  select(January, April, May, June, July, August, September, October, November, December, Season, DS, ET,NR,SS,TS) %>%
+  as.matrix()
+r <- ranef(glmm) 
+B <-  r$ID %>% as.matrix() %>% t() %>% as.matrix()
+gamma <-c (0,gamma_init)
+gamma <- append(gamma, 0, after=11) %>% as.matrix() 
+
+```
+
+```{r}
+chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 0.001, 
+                                             numtocompute = 400, 
+                                             a = 1, Y, D, B, X, gamma)
+```
+
+```{r}
+plot(chain)
+```
+
+```{r}
+hist(chain)
+```
+
