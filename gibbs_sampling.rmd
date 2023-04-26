@@ -243,7 +243,12 @@ B_post <- function(D, sigma_squared, A, X_with_id, gamma, mu){
 
 ```{r}
 mu_post <- function(A, V, B){
-  #wait :) 
+  M <- M %*% A - solve(V)
+  N <- NULL
+  for (i in 1:H){
+    N <- N + A %*% B[,i]
+  }
+  mu <-  mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M))
 }
 ```
 
@@ -261,11 +266,29 @@ A_post <- function(H, nu, B, mu, S){
   
   A <- rwishart(nu = df, S = scale)
   
+  
   return (A)
 }
 ```
 
 ```{r}
-
+gamma_post <- function(X,Y, D,B){
+  M <- NULL
+  N <- NULL
+  for (i in 1:H){
+    X_i <- X_with_id[ith_hurricane_idx,][,-1]
+    Y_i <- Y[ith_hurricane_idx,]
+    D_i <- D[ith_hurricane_idx,]
+    M = M + t(X_i) %*% (1/sigma_squared*diag(n_i))  %*% X_i
+    
+    N = N + t(X_i) %*% (1/sigma_squared*diag(n_i))  %*% Y_i - t(X_i) %*% (1/sigma_squared*diag(n_i)) %*% D_i %*% B[,i]
+    
+  }
+  M = M+ 400*diag(3)
+  
+  gamma <- mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M))
+  
+  return(gamma)
+}
 ```
 
