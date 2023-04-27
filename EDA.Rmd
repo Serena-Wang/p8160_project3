@@ -64,7 +64,7 @@ map +
   stat_summary_2d(data = dt, aes(x = Longitude, y = Latitude, z = dt$Wind.kt), 
                   fun = median, binwidth = c(1, 1), 
                   show.legend = TRUE, alpha = 0.75) + 
-  ggtitle(paste0("Plot 1: Atlantic Windstorm mean knot"))
+  ggtitle(paste0("Figure 1: Atlantic Windstorm mean knot"))
 ```
 
 ## Track of Each Hurricane on Map
@@ -137,7 +137,7 @@ hurricane %>%
     sec.axis = sec_axis(~.*0.01, name = "Average Wind Speed")) +
   scale_color_manual(name = "Speed",
                      values = c(" " = "#404080")) +
-  labs(title = "Plot 2: Hurricane Frequency and Average Wind Speed by Month")
+  labs(title = "Figure 2: Hurricane Frequency and Average Wind Speed by Month")
 ```
 
 ```{r}
@@ -154,7 +154,7 @@ hurricane %>%
     sec.axis = sec_axis(~.*0.1, name = "Average Wind Speed")) +
   scale_color_manual(name = "Speed",
                      values = c(" " = "#404080")) +
-  labs(title = "Plot 3: Hurricane Frequency and Average Wind Speed by Year",
+  labs(title = "Figure 3: Hurricane Frequency and Average Wind Speed by Year",
        x = "Year")
 ```
 
@@ -163,7 +163,7 @@ hurricane %>%
   group_by(Nature) %>% 
   ggplot(aes(x = Nature, y = Wind.kt)) +
   geom_boxplot(fill = "#69b3a2", alpha = 0.6) +
-  labs(title = "Plot 4: Hurricane Wind Speed Boxplot by Nature",
+  labs(title = "Figure 4: Hurricane Wind Speed Boxplot by Nature",
        x = "Nature")
 ```
 
