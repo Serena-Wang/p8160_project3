@@ -31,21 +31,17 @@ $$
 \Sigma \sim W^{-1}(S, \nu = 5)
 $$
 
-$$f_{\Sigma^{-1}}(\Sigma)  \propto |\Sigma^{-1}|^{n+1}e^{\frac{-1}{2}tr(\Sigma^{-1})}$$ 
-
-where n is the dimension of dataset... this formula might be wrong meh
-
-determinant n dim of of sigma
-
-Wishart
 
 Due to property of Wishart distribution, $$\Sigma^{-1} \sim W(S^{-1}, \nu = 5)$$
 $$f_{\Sigma^{-1}}(\Sigma^{-1})   = |\Sigma^{-1}|^{\frac{\nu-d-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) \propto |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) $$ 
  
 3.
 
-$$\gamma \sim MVN(\begin{bmatrix} 0 \\ 0\\0 \end{bmatrix}, 0.005^2I_3)$$
-$$f_\gamma(\gamma) = (3*0.005^2)^{-1/2} exp(-\frac{\gamma ^\intercal 0.005^2I_3\gamma}{2}) \propto exp(-\frac{400\gamma ^\intercal\gamma}{2}) $$
+$$\gamma \sim MVN(\begin{bmatrix} 0 \\ 0\\ ... \\0 \end{bmatrix}, 0.005^2I_{15})$$
+
+Since Month and Nature are categorical variables, the dimension of the $\gamma$ is $15\times1$.
+
+$$f_\gamma(\gamma) = (15*0.005^2)^{-1/2} exp(-\frac{\gamma ^\intercal 0.005^2I_{15}\gamma}{2}) \propto exp(-\frac{400\gamma ^\intercal\gamma}{2}) $$
 
 4. 
 
@@ -62,17 +58,17 @@ Because random effects coefficients $\beta_i$ is normal, $Y_i|\beta_i$ also foll
 
 For each hurricane $Y_i$
 
-$$\begin{aligned}Y_i|\beta_i, \mu_i, \sigma^2, \Sigma, \gamma \sim & MVN(\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+ \beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma,  \sigma^2I_i) \\
+$$\begin{aligned}Y_i|\beta_i, \mu_i, \sigma^2, \Sigma, \gamma \sim & MVN(\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+ \beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma,  \sigma^2I_{n_i}) \\
 = & MVN(D_{i}\beta_{i}+X_i\gamma,  \sigma^2I_{n_i})\end{aligned}$$
 
 where 
 
-$$Y_{i} = \begin{bmatrix}Y_i(t_0 + 6) \\Y_i(t_1 + 6) \\ \vdots \\ Y_i(t=t_j+6) \\ \vdots \\ Y_i(t = t_{n_{i-1}} + 6) \end{bmatrix}_{n_i\times 1}$$
+$$Y_{i} = \begin{bmatrix}Y_i(t_2) \\Y_i(t_3) \\ \vdots \\ Y_i(t=t_j) \\ \vdots \\ Y_i(t = t_{n_i}) \end{bmatrix}_{n_i\times 1}$$
 $$\begin{aligned}D_{i}(t) =& \begin{bmatrix} 1 & Y_i(t) & \Delta_{i,1}(t)&\Delta_{i,2}(t)& \Delta_{i,3}(t)\end{bmatrix} \\
-=&\begin{bmatrix} 1 & Y_i(t=t_0 ) & \Delta_{i,1}(t=t_0)&\Delta_{i,2}(t=t_0)& \Delta_{i,3}(t=t_0)\\
-1 & Y_i(t=t_1) & \Delta_{i,1}(t=t_1)&\Delta_{i,2}(t=t_1)& \Delta_{i,3}(t=t_1)\\ \dots\\ 1 & Y_i(t=t_j) & \Delta_{i,1}(t=t_j)&\Delta_{i,2}(t=t_j)& \Delta_{i,3}(t=t_j)\\\dots\\ 1 & Y_i(t = t_{n_{i-1}} ) & \Delta_{n,1}(t=t_{n_{i-1}})&\Delta_{n,2}(t=t_{n_{i-1}})& \Delta_{n,3}(t=t_{n_{i-1}})\end{bmatrix}_{n_i\times 5}\end{aligned}$$
-$$\beta_i = \begin{bmatrix} \beta_{0,i} \\\beta_{1,i}\\\beta_{2,i} \\\beta_{3,i}\\\beta_{4,i}\end{bmatrix}$$ $$X_i = \begin{bmatrix} x_{i,1} & x_{i,2} & x_{i,3}\end{bmatrix}_{1\times 3}$$ 
-$$\gamma = \begin{bmatrix} \gamma_1 \\ \gamma_2 \\ \gamma_3\end{bmatrix}_{3\times 1}$$
+=&\begin{bmatrix} 1 & Y_i(t=t_1 ) & \Delta_{i,1}(t_1, t_0)&\Delta_{i,2}(t_1, t_0)& \Delta_{i,3}(t_1, t_0)\\
+1 & Y_i(t=t_2) & \Delta_{i,1}(t_2, t_1)&\Delta_{i,2}(t_2, t_1)& \Delta_{i,3}(t_2, t_1)\\ \dots\\ 1 & Y_i(t=t_{j-1}) & \Delta_{i,1}(t_{j-1}, t_{j-2})&\Delta_{i,2}(t_{j-1}, t_{j-2})& \Delta_{i,3}(t_{j-1}, t_{j-2})\\\dots\\ 1 & Y_i(t = t_{n_{i-1}} ) & \Delta_{n,1}(t_{n_{i-1}} - t_{n_{i-2}})&\Delta_{n,2}(t_{n_{i-1}} - t_{n_{i-2}})& \Delta_{n,3}(t_{n_{i-1}} - t_{n_{i-2}})\end{bmatrix}_{n_i\times 5}\end{aligned}$$
+$$\beta_i = \begin{bmatrix} \beta_{0,i} \\\beta_{1,i}\\\beta_{2,i} \\\beta_{3,i}\\\beta_{4,i}\end{bmatrix}_{5\times 1}$$ $$X_i = \begin{bmatrix} X_{i,1} & x_{i,2} & X_{i,3}\end{bmatrix}_{n_i\times 15}$$ 
+$$\gamma = \begin{bmatrix} \gamma_1 \\ \gamma_2 \\... \\ \gamma_{15}\end{bmatrix}_{15\times 1}$$
 
 Likelihood for the ith hurricane is 
 
@@ -154,17 +150,12 @@ For $\sigma^2$,
 
 $$\begin{aligned} f(\sigma^2|B, \mu, \Sigma, \gamma, Y)\propto 
 & \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)) \times \\
-& \frac{1}{\pi(\sigma^2+10^2)\sigma} \\
-\approx& (\sigma^2)^{-1/2\sum_{i=1}^{H}n_i} exp(-\frac{1}{2\sigma^2}\sum_{i=1}^{H}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal (Y_i - D_{i}\beta_{i}-X_i\gamma)) \times \frac{1}{\sigma}\\
-=& (\sigma^2)^{-\frac{N+1}{2}}exp(-\frac{1}{2\sigma^2}\sum_{i=1}^{H}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal (Y_i - D_{i}\beta_{i}-X_i\gamma))
+& \frac{1}{\pi(\sigma^2+10^2)\sigma}
 \end{aligned}$$
 
-Note: since $\sigma^2$ is much smaller than $10^2$, we consider use $\frac{1}{\pi k^\prime \sigma}$, where $k^\prime$ is a constant, to approximate $\frac{1}{\pi(\sigma^2+10^2)\sigma}$.
+Note: the conditional probability density function of $\sigma^2$ is not a known distribution, so we need to introduce metropolis hasting here.
 
-Let $shape = \frac{N-1}{2}$ and $rate = \frac{1}{2}\sum_{i=1}^{H}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal (Y_i - D_{i}\beta_{i}-X_i\gamma), \\$
-
-Finally, we have $f(\sigma^2|B, \mu, \Sigma, \gamma, Y) \sim Inverse Gamma(shape, rate) \\$ 
-
+&nbsp;
 
 For $A = \Sigma^{-1}$,
 
