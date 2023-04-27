@@ -1,0 +1,141 @@
+---
+title: "EDA"
+author: "Youlan Shen"
+date: "2023-04-26"
+output: pdf_document
+---
+
+# Data Exploratory Analysis
+
+hurrican703.csv collected the track data of 703 hurricanes in the North Atlantic area since 1950. For all the storms, their location (longitude & latitude) and maximum wind speed were recorded every 6 hours. The data includes the following variables
+
+1. **ID**: ID of the hurricans
+
+2. **Season**: In which the hurricane occurred
+
+3. **Month**: In which the hurricane occurred
+
+4. **Nature**: Nature of the hurricane
+
+* ET: Extra Tropical
+* DS: Disturbance
+* NR: Not Rated
+* SS: Sub Tropical
+* TS: Tropical Storm
+
+5. **time**: dates and time of the record
+
+6. **Latitude** and **Longitude**: The location of a hurricane check point
+
+7. **Wind.kt** Maximum wind speed (in Knot) at each check point
+
+```{r, message=FALSE, warning=FALSE}
+# library all packages that we need at the beginning
+library(tidyverse)
+library(dplyr)
+library(readxl)
+library(car)
+library(gtsummary)
+library(corrplot)
+library(caret)
+```
+
+## Summary table and Plot for hurricane data
+
+```{r}
+library(ggplot2)
+dt = read.csv("hurrican703.csv")
+ggplot(data=dt, aes(x = Longitude, y = Latitude)) + 
+  stat_summary_2d(data = dt, aes(x = Longitude, y = Latitude, z = dt$Wind.kt), 
+                  fun = median, binwidth = c(1, 1), show.legend = TRUE)
+library(data.table)
+dt <- as.data.table(dt)
+summary(dt)
+```
+
+## Hurricane data on World Map
+
+```{r}
+library(maps)
+map <- ggplot(data = dt, aes(x = Longitude, y = Latitude)) + 
+  geom_polygon(data = map_data(map = 'world'), 
+               aes(x = long, y = lat, group = group))
+map +
+  stat_summary_2d(data = dt, aes(x = Longitude, y = Latitude, z = dt$Wind.kt), 
+                  fun = median, binwidth = c(1, 1), 
+                  show.legend = TRUE, alpha = 0.75) + 
+  ggtitle(paste0("Atlantic Windstorm mean knot"))
+```
+
+## Track of Each Hurricane on Map
+
+```{r}
+map <- ggplot(dt, aes(x = Longitude, y = Latitude, group = ID)) + 
+  geom_polygon(data = map_data("world"), 
+               aes(x = long, y = lat, group = group), 
+               fill = "gray25", colour = "gray10", size = 0.2) + 
+  geom_path(data = dt, aes(group = ID, colour = Wind.kt), size = 0.5) + 
+  xlim(-138, -20) + ylim(3, 55) + 
+  labs(x = "", y = "", colour = "Wind \n(knots)") + 
+  theme(panel.background = element_rect(fill = "gray10", colour = "gray30"),
+        axis.text.x = element_blank(), axis.text.y = element_blank(), 
+        axis.ticks = element_blank(), panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+seasonrange <- paste(range(dt[, Season]), collapse=" - ")
+
+map + ggtitle(paste("Atlantic named Windstorm Trajectories (", 
+                     seasonrange, ")\n")) 
+```
+
+## Track of Each Hurricane by Month on Map
+
+```{r}
+mapMonth <- map + facet_wrap(~ Month) +
+  ggtitle(paste("Atlantic named Windstorm Trajectories by Month (", 
+                 seasonrange, ")\n")) 
+mapMonth
+```
+
+## Others
+
+```{r}
+# read in data from CSV file
+hurricane <- read.csv("hurrican703.csv")
+# tidy data on date
+hurricane <- as_tibble(hurricane) %>%
+  separate(time, into = c("Date", "Hour"), sep = " ") %>% 
+  mutate(Hour = ifelse(Hour == "00:00:00)", 0, 
+                       ifelse(Hour == "06:00:00)", 6,
+                              ifelse(Hour == "12:00:00)", 12, 18))),
+         Date = str_remove(Date, "\\("),
+         Date = yday(Date),
+         Month = factor(Month,levels = month.name))
+# tidy data on latitude longitude wind_kt
+hurricane <- hurricane %>% 
+  group_by(ID) %>% 
+  mutate(Lat_change =  Latitude - lag(Latitude, 1),
+         Long_change = Longitude - lag(Longitude, 1),
+         Wind_change = Wind.kt - lag(Wind.kt, 1),
+         Wind_prev = lag(Wind.kt, 1)) %>% 
+  na.omit()
+hurricane
+```
+
+```{r}
+hurricane %>% 
+  group_by(Month) %>% 
+  summarise(count = n(),
+            Ave.Speed = mean(Wind.kt)) %>% 
+  ggplot(aes(x = Month)) +
+  geom_col(aes(y = count), fill = "#69b3a2", alpha = 0.6) +
+  geom_point(aes(y = Ave.Speed*100), color = "#404080", alpha = 0.6) +
+  scale_y_continuous(
+    name = "Frequncy of the Hurricane",
+    sec.axis = sec_axis(~.*0.01, name = "Average Speed"))
+```
+
+```{r}
+save(hurricane, file = "hurricane.RData")
+```
+
