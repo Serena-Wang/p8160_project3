@@ -116,7 +116,7 @@ hurricane <- hurricane %>%
   group_by(ID) %>% 
   mutate(Lat_change =  Latitude - lag(Latitude, 1),
          Long_change = Longitude - lag(Longitude, 1),
-         Wind_change = Wind.kt - lag(Wind.kt, 1),
+         Wind_change = lag(Wind.kt, 1) - lag(Wind.kt, 2),
          Wind_prev = lag(Wind.kt, 1)) %>% 
   na.omit()
 hurricane
@@ -138,4 +138,6 @@ hurricane %>%
 ```{r}
 save(hurricane, file = "hurricane.RData")
 ```
+
+
 
