@@ -64,7 +64,7 @@ map +
   stat_summary_2d(data = dt, aes(x = Longitude, y = Latitude, z = dt$Wind.kt), 
                   fun = median, binwidth = c(1, 1), 
                   show.legend = TRUE, alpha = 0.75) + 
-  ggtitle(paste0("Atlantic Windstorm mean knot"))
+  ggtitle(paste0("Plot 1: Atlantic Windstorm mean knot"))
 ```
 
 ## Track of Each Hurricane on Map
@@ -97,7 +97,7 @@ mapMonth <- map + facet_wrap(~ Month) +
 mapMonth
 ```
 
-## Others
+## Tidy Data and Preprocessing for MCMC
 
 ```{r}
 # read in data from CSV file
@@ -119,8 +119,10 @@ hurricane <- hurricane %>%
          Wind_change = lag(Wind.kt, 1) - lag(Wind.kt, 2),
          Wind_prev = lag(Wind.kt, 1)) %>% 
   na.omit()
-hurricane
+# save(hurricane, file = "hurricane.RData")
 ```
+
+## Exploratory Plots of Hurricane in each 
 
 ```{r}
 hurricane %>% 
@@ -129,15 +131,42 @@ hurricane %>%
             Ave.Speed = mean(Wind.kt)) %>% 
   ggplot(aes(x = Month)) +
   geom_col(aes(y = count), fill = "#69b3a2", alpha = 0.6) +
-  geom_point(aes(y = Ave.Speed*100), color = "#404080", alpha = 0.6) +
+  geom_point(aes(y = Ave.Speed*100, color = " "), alpha = 0.6) +
   scale_y_continuous(
     name = "Frequncy of the Hurricane",
-    sec.axis = sec_axis(~.*0.01, name = "Average Speed"))
+    sec.axis = sec_axis(~.*0.01, name = "Average Wind Speed")) +
+  scale_color_manual(name = "Speed",
+                     values = c(" " = "#404080")) +
+  labs(title = "Plot 2: Hurricane Frequency and Average Wind Speed by Month")
 ```
 
 ```{r}
-save(hurricane, file = "hurricane.RData")
+hurricane %>% 
+  group_by(Season) %>% 
+  summarise(count = n(),
+            Ave.Speed = mean(Wind.kt)) %>% 
+  ggplot(aes(x = Season)) +
+  geom_col(aes(y = count), fill = "#69b3a2", alpha = 0.6) +
+  geom_point(aes(y = Ave.Speed*10, color = " "), alpha = 0.6) +
+  geom_smooth(aes(y = Ave.Speed*10, color = " "), alpha = 0.6) +
+  scale_y_continuous(
+    name = "Frequncy of the Hurricane",
+    sec.axis = sec_axis(~.*0.1, name = "Average Wind Speed")) +
+  scale_color_manual(name = "Speed",
+                     values = c(" " = "#404080")) +
+  labs(title = "Plot 3: Hurricane Frequency and Average Wind Speed by Year",
+       x = "Year")
 ```
+
+```{r}
+hurricane %>% 
+  group_by(Nature) %>% 
+  ggplot(aes(x = Nature, y = Wind.kt)) +
+  geom_boxplot(fill = "#69b3a2", alpha = 0.6) +
+  labs(title = "Plot 4: Hurricane Wind Speed Boxplot by Nature",
+       x = "Nature")
+```
+
 
 
 
