@@ -20,8 +20,8 @@ library(MASS)
 ## load data
 
 ```{r}
-load("data.RData")
-data <- data %>% drop_na()
+load("hurricane.RData")
+data <- hurricane %>% ungroup()
 ```
 
 ```{r}
@@ -119,7 +119,7 @@ metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma
    #   }
    # }
   
-  prop <- curr + rnorm(1,mean=0, sd=a)
+  prop <- curr + (runif(1)-0.5)*2*a
   
   
   prop_post <- sigma_squared_log_posterior(prop, Y, D, B, X, gamma)
@@ -172,29 +172,29 @@ metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20,
 ```{r}
 a <- 1
 Y <- as.matrix(data$Wind.kt)
-D <- data %>% mutate(intercept = 1) %>% select(intercept, Wind_prev, Lat_change, Long_change, Wind_change)%>% as.matrix()
+D <- data %>% mutate(intercept = 1) %>% dplyr::select(intercept, Wind_prev, Lat_change, Long_change, Wind_change) %>% as.matrix()
 X <- data  %>%
   mutate(index =1:nrow(data))%>%
   group_by(index) %>%
-  select(Month, Season, Nature) %>%
+  dplyr::select(Month, Season, Nature) %>%
   mutate(n = 1)%>% 
   pivot_wider(names_from = Month, values_from=n, values_fill=0) %>% 
   mutate(n = 1)%>% 
   pivot_wider(names_from = Nature, values_from=n, values_fill=0) %>% 
   ungroup() %>%
-  select(January, April, May, June, July, August, September, October, November, December, Season, DS, ET,NR,SS,TS) %>%
+  mutate(intercept = 1) %>%
+  dplyr::select(intercept, April, May, June, July, August, September, October, November, December, Season, ET,NR,SS,TS) %>%
   as.matrix()
 r <- ranef(glmm) 
 B <-  r$ID %>% as.matrix() %>% t() %>% as.matrix()
-gamma <-c (0,gamma_init)
-gamma <- append(gamma, 0, after=11) %>% as.matrix() 
+gamma <-c (37.841607,gamma_init) %>% as.matrix() 
 
 ```
 
 ```{r}
-chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 0.000005, 
-                                             numtocompute = 2000, 
-                                             a = 0.000008, Y, D, B, X, gamma)
+chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 27.2828, 
+                                             numtocompute = 500, 
+                                             a = 2, Y, D, B, X, gamma)
 ```
 
 ```{r}
@@ -203,7 +203,7 @@ plot(chain, type='l')
 ```
 
 ```{r}
-hist(chain)
+hist(chain, freq = F, nclass = 100)
 ```
 
 
@@ -328,7 +328,7 @@ gamma_post <- function(X,Y, D,B, sigma_squared){
     N = N + t(X_i) %*% ((1/sigma_squared)*diag(n_i))  %*% Y_i - t(X_i) %*% (1/sigma_squared*diag(n_i)) %*% D_i %*% B[,i,drop = FALSE]
     
   }
-  M = M+ 400*diag(16)
+  M = M+ 400*diag((dim(X)[2]))
   
   gamma <- mvrnorm(1, mu = solve(M) %*% N, Sigma = solve(M)) %>% as.matrix()
   
@@ -409,19 +409,19 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     
     # sigma_squared on its own random walk
     # not sure it works though
-    # sigma_squared_chain <- metropolis_hasting_sigma_squared(
-    #   start_sigma_squared = start_sigma_squared, 
-    #   numtocompute = 2000, 
-    #   a = 0.000008, 
-    #   Y, 
-    #   D, 
-    #   B, 
-    #   X, 
-    #   gamma)
-    # 
-    # sigma_squared <- mean(chain)
+    sigma_squared_chain <- metropolis_hasting_sigma_squared(
+      start_sigma_squared = start_sigma_squared, 
+      numtocompute = 500, 
+      a = 2, 
+      Y, 
+      D, 
+      B, 
+      X, 
+      gamma)
+     
+    sigma_squared <- mean(chain[400:500])
     
-    sigma_squared <- test_sigma_squared_post(Y, D, B , X, gamma)
+    #sigma_squared <- test_sigma_squared_post(Y, D, B , X, gamma)
     
     # collect results
     B_post_results[[i]] <- B
@@ -453,7 +453,7 @@ S[upper.tri(S)] <- 0.2
 
 
 
-test = hurricane_gibbs_sampling(start_sigma_squared = 1, 
+test = hurricane_gibbs_sampling(start_sigma_squared = 27.2828, 
                                 start_A = solve(S),
                                 start_gamma = gamma, 
                                 start_mu = rowMeans(B) %>% as.matrix(),
@@ -463,5 +463,29 @@ test = hurricane_gibbs_sampling(start_sigma_squared = 1,
                                 D,
                                 Y)
 save(test,file = "test.RData")
+```
+
+
+```{r}
+# beta plots
+apr_beta <- rep(NA, 100)
+may_beta <- rep(NA, 100)
+jun_beta <- rep(NA, 100)
+jul_beta <- rep(NA, 100)
+aug_beta <- rep(NA, 100)
+sep_beta <- rep(NA, 100)
+oct_beta <- rep(NA, 100)
+nov_beta <- rep(NA, 100)
+dec_beta <- rep(NA, 100)
+season_beta <- rep(NA, 100)
+et_beta <- rep(NA, 100)
+nr_beta <- rep(NA, 100)
+ss_beta <- rep(NA, 100)
+ts_beta <- rep(NA, 100)
+
+plot(1:100, type='l', sapply(1:100, function(x) test[["B"]][[x]][1,1]))
+```
+```{r}
+plot(1:100, type='l', sapply(1:100, function(x) test[["gamma"]][[x]][15,1]))
 ```
 
