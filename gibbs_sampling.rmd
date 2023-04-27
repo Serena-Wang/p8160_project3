@@ -106,8 +106,8 @@ sigma_squared_log_posterior <- function(sigma_squared, Y, D, B, X, gamma){
 #' @param Y full response vector in shape N x 1 where N is the total number of observations in the data set
 #' @param D full design matrix for random effects for all hurricanes. Its shape is N x 5.
 #' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
-#' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 3. 
-#' @param gamma fixed effects coefficients matrix in shape 3 x 1. 
+#' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 16. 
+#' @param gamma fixed effects coefficients matrix in shape 16 x 1. 
 #' 
 #' @return next value for sigma squared in metropolis hasting random walk  
 metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma){
@@ -222,6 +222,18 @@ B posterior
 ```{r}
 # to get B transpose --> need to transpose B
 # B is 5 x H
+
+#' calculate conditional posterior for B
+#' 
+#' @param D full design matrix for random effects for all hurricanes in shape N x 5.
+#' @param sigma_squared a double for sigma squared value
+#' @param A inverse of variance of beta's in shape 5 x 5.
+#' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 16. 
+#' @param gamma fixed effects coefficients matrix in shape 16 x 1. 
+#' @param mu  mean of beta's in shape 5 x 1
+#' 
+#' @return posterior of B in shape 5 x H based on the given values
+#'  
 B_post <- function(D, sigma_squared, A, X, gamma, mu){
   B <- NULL
   total_obs <- nrow(D)
@@ -247,6 +259,13 @@ B_post <- function(D, sigma_squared, A, X, gamma, mu){
 
 
 ```{r}
+#' calculate conditional posterior for mu
+#'
+#' @param A inverse of variance of beta's in shape 5 x 5.
+#' @param V variance-covariance matrix for mu in shape 5 x 5
+#' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
+#' 
+#' @return posterior of mu in shape 5 x 1 based on the given values
 mu_post <- function(A, V, B){
   M <- H* A - solve(V)
   N <- 0
@@ -260,6 +279,14 @@ mu_post <- function(A, V, B){
 ```
 
 ```{r}
+#' calculate conditional posterior for A (inverse of Sigma)
+#'
+#' @param nu integer for degree of freedom
+#' @param B full random effects coefficients matrix in shape 5 x H where H is the to
+#' @param mu  mean of beta's in shape 5 x 1
+#' @param S scale matrix for A in shape 5 x 5.
+#' 
+#' @return posterior of A in shape 5 x 5 based on the given values
 A_post <- function(nu, B, mu, S){
   df <- H + nu
   
@@ -278,6 +305,15 @@ A_post <- function(nu, B, mu, S){
 ```
 
 ```{r}
+#' calculate conditional posterior for gamma
+#' 
+#' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 16. 
+#' @param Y full response vector in shape N x 1 where N is the total number of observations in the data set
+#' @param D full design matrix for random effects for all hurricanes in shape N x 5.
+#' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
+#' @param sigma_squared  a double for sigma squared value
+#' 
+#' @return  posterior of gamma in shape 16 x 1 based on the given values
 gamma_post <- function(X,Y, D,B, sigma_squared){
   M <- 0
   N <- 0
