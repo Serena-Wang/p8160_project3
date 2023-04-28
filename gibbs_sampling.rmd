@@ -61,8 +61,18 @@ $$\begin{aligned} f(\sigma^2|B, \mu, \Sigma, \gamma, Y)\propto
 #' @return posterior value for sigma squared with the given matrices
 sigma_squared_posterior <- function(sigma_squared, Y, D, B, X, gamma){
   N <- length(Y)
-  DB <- D%*%B
-  Y_minus_mu <- Y-DB[,1]- X%*%gamma
+  
+  mu_H <- rep(NA, N)
+  for (i in 1:H){
+    curr_hurricane_idx <- ith_hurricane_idx[[i]]
+    mu_i <- D[curr_hurricane_idx,,drop = FALSE] %*% B[,i,drop = FALSE]
+    mu_H[curr_hurricane_idx] <- mu_i
+  }
+  
+  mu_H <- as.matrix(mu_H)
+  
+  Y_minus_mu <- Y-mu_H- X%*%gamma
+  
   if (sigma_squared>0){
     sigma <- sqrt(sigma_squared)
     
@@ -78,11 +88,20 @@ sigma_squared_posterior <- function(sigma_squared, Y, D, B, X, gamma){
 ```
 
 ```{r}
-sigma_squared_log_posterior <- function(sigma_squared, Y, D, B, X, gamma){
+sigma_squared_log_posterior <- function(sigma_squared, Y, D, B, X, gamma, H, ith_hurricane_idx){
  
   N = length(Y)
-  DB <- D%*%B
-  Y_minus_mu <- Y-DB[,1]- X%*%gamma
+  
+  mu_H <- rep(NA, N)
+  for (i in 1:H){
+    curr_hurricane_idx <- ith_hurricane_idx[[i]]
+    mu_i <- D[curr_hurricane_idx,,drop = FALSE] %*% B[,i,drop = FALSE]
+    mu_H[curr_hurricane_idx] <- mu_i
+  }
+  
+  mu_H <- as.matrix(mu_H)
+
+  Y_minus_mu <- Y-mu_H- X%*%gamma
   
   if (sigma_squared>0){
     sigma <- sqrt(sigma_squared)
@@ -108,36 +127,19 @@ sigma_squared_log_posterior <- function(sigma_squared, Y, D, B, X, gamma){
 #' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
 #' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 16. 
 #' @param gamma fixed effects coefficients matrix in shape 16 x 1. 
+#' @param H integer number of hurricanes
+#' @param ith_hurricane_idx list of list of integers indexes for observations for the ith hurricane
 #' 
 #' @return next value for sigma squared in metropolis hasting random walk  
-metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma){
-  
-   # for (i in 1:100){
-   #   prop <- prop <- curr + rnorm(1,mean=0, sd=a)
-   #   if (prop >0){
-   #     break
-   #   }
-   # }
+metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma, H, ith_hurricane_idx){
   
   prop <- curr + (runif(1)-0.5)*2*a
   
+  prop_post <- sigma_squared_log_posterior(prop, Y, D, B, X, gamma, H, ith_hurricane_idx)
   
-  prop_post <- sigma_squared_log_posterior(prop, Y, D, B, X, gamma)
+  curr_post <- sigma_squared_log_posterior(curr, Y, D, B, X, gamma, H, ith_hurricane_idx)
   
-  curr_post <- sigma_squared_log_posterior(curr, Y, D, B, X, gamma)
-  
-  # print("Prop")
-  # print(prop)
-  # print("Prop log post")
-  # print(prop_post)
-  # print("curr")
-  # print(curr)
-  # print("curr log post")
-  # print(curr_post)
-  # 
   posterior_ratio <- exp(prop_post - curr_post)
-  #posterior_ratio <- exp(prop_post + log(pnorm(curr)) - curr_post - log(pnorm(prop)))
-  #posterior_ratio <- prop_post /curr_post
   
   # acceptance prob
   alpha = min(posterior_ratio, 1)
@@ -158,12 +160,12 @@ metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma
 metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20, 
                                              numtocompute = 1000, 
                                              a = 2,
-                                             Y, D, B, X, gamma){
+                                             Y, D, B, X, gamma, H, ith_hurricane_idx){
   chain <- rep(NA, numtocompute)
   chain[1] <- start_sigma_squared
   for (i in 2:numtocompute) {
     #print(i)
-    chain[i] <- metropolis_hasting_sigma_squared_next_val(chain[i-1],a,Y, D, B, X, gamma)
+    chain[i] <- metropolis_hasting_sigma_squared_next_val(chain[i-1],a,Y, D, B, X, gamma, H, ith_hurricane_idx)
   }
   return (chain)
 }
@@ -231,10 +233,12 @@ B posterior
 #' @param X full design matrix for fixed effects for all hurricanes. Its shape is H x 16. 
 #' @param gamma fixed effects coefficients matrix in shape 16 x 1. 
 #' @param mu  mean of beta's in shape 5 x 1
+#' @param H integer number of hurricanes
+#' @param ith_hurricane_idx list of list of integers indexes for observations for the ith hurricane
 #' 
 #' @return posterior of B in shape 5 x H based on the given values
 #'  
-B_post <- function(D, sigma_squared, A, X, gamma, mu){
+B_post <- function(D, sigma_squared, A, X, gamma, mu, H, ith_hurricane_idx){
   B <- NULL
   total_obs <- nrow(D)
   for (i in 1:H){
@@ -285,9 +289,10 @@ mu_post <- function(A, V, B){
 #' @param B full random effects coefficients matrix in shape 5 x H where H is the to
 #' @param mu  mean of beta's in shape 5 x 1
 #' @param S scale matrix for A in shape 5 x 5.
+#' @param H integer number of hurricanes
 #' 
 #' @return posterior of A in shape 5 x 5 based on the given values
-A_post <- function(nu, B, mu, S){
+A_post <- function(nu, B, mu, S, H){
   df <- H + nu
   
   sum = 0
@@ -312,9 +317,11 @@ A_post <- function(nu, B, mu, S){
 #' @param D full design matrix for random effects for all hurricanes in shape N x 5.
 #' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
 #' @param sigma_squared  a double for sigma squared value
+#' @param H integer number of hurricanes
+#' @param ith_hurricane_idx list of list of integers indexes for observations for the ith hurricane
 #' 
 #' @return  posterior of gamma in shape 16 x 1 based on the given values
-gamma_post <- function(X,Y, D,B, sigma_squared){
+gamma_post <- function(X,Y, D,B, sigma_squared, H, ith_hurricane_idx){
   M <- 0
   N <- 0
   for (i in 1:H){
@@ -338,12 +345,20 @@ gamma_post <- function(X,Y, D,B, sigma_squared){
 
 
 ```{r}
-test_sigma_squared_post <- function(Y, D, B , X, gamma){
+test_sigma_squared_post <- function(Y, D, B , X, gamma, H, ith_hurricane_idx){
   
   shape <- (nrow(D)-1)/2
   
-  DB <- D%*%B
-  Y_minus_mu <- Y-DB[,1,drop = FALSE]- X%*%gamma
+  mu_H <- rep(NA, N)
+  for (i in 1:H){
+    curr_hurricane_idx <- ith_hurricane_idx[[i]]
+    mu_i <- D[curr_hurricane_idx,,drop = FALSE] %*% B[,i,drop = FALSE]
+    mu_H[curr_hurricane_idx] <- mu_i
+  }
+  
+  mu_H <- as.matrix(mu_H)
+
+  Y_minus_mu <- Y-mu_H- X%*%gamma
   
   rate <-t(Y_minus_mu)%*%(Y_minus_mu)/2
   
@@ -366,7 +381,9 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
                                      D,
                                      Y,
                                      nitr = 100,
-                                     nu = 5){
+                                     nu = 5, 
+                                     H, 
+                                     ith_hurricane_idx){
   B_post_results <- list()
   mu_post_reulsts <- list()
   A_post_results <- list()
@@ -374,7 +391,7 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
   sigma_squared_post_results <- list()
   
   # B first
-  B <- B_post(D, start_sigma_squared, start_A, X, start_gamma, start_mu)
+  B <- B_post(D, start_sigma_squared, start_A, X, start_gamma, start_mu, H, ith_hurricane_idx)
   
   B_post_results[[1]] <- B
   mu_post_reulsts[[1]] <- start_mu
@@ -391,7 +408,9 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
                 A_post_results[[i-1]], 
                 X, 
                 gamma_post_results[[i-1]], 
-                mu_post_reulsts[[i-1]])
+                mu_post_reulsts[[i-1]],
+                H, 
+                ith_hurricane_idx)
     
     mu <- mu_post(A_post_results[[i-1]], 
                   V, 
@@ -399,13 +418,16 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     A <- A_post(nu, 
                 B, 
                 mu, 
-                S)
+                S,
+                H)
       
     gamma <- gamma_post(X,
                         Y, 
                         D,
                         B,
-                        sigma_squared_post_results[[i-1]])
+                        sigma_squared_post_results[[i-1]],
+                        H, 
+                        ith_hurricane_idx)
     
     # sigma_squared on its own random walk
     # not sure it works though
@@ -417,7 +439,9 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
       D, 
       B, 
       X, 
-      gamma)
+      gamma,
+      H, 
+      ith_hurricane_idx)
      
     sigma_squared <- mean(chain[400:500])
     
@@ -459,9 +483,11 @@ test = hurricane_gibbs_sampling(start_sigma_squared = 27.2828,
                                 start_mu = rowMeans(B) %>% as.matrix(),
                                 V = V ,
                                 S = S,
-                                X,
-                                D,
-                                Y)
+                                X = X,
+                                D = D,
+                                Y = Y,
+                                H = H, 
+                                ith_hurricane_idx = ith_hurricane_idx)
 save(test,file = "test.RData")
 ```
 
@@ -486,6 +512,8 @@ ts_beta <- rep(NA, 100)
 plot(1:100, type='l', sapply(1:100, function(x) test[["B"]][[x]][1,1]))
 ```
 ```{r}
-plot(1:100, type='l', sapply(1:100, function(x) test[["gamma"]][[x]][15,1]))
+plot(1:100, type='l', sapply(1:100, function(x) test[["gamma"]][[x]][2,1]))
 ```
-
+```{r}
+plot(1:100, type='l', sapply(1:100, function(x) test[["B"]][[x]][3,1]))
+```
