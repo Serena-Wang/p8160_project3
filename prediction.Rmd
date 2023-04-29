@@ -10,6 +10,7 @@ output: pdf_document
 ```{r, message = FALSE}
 library(tidyverse)
 library(dplyr)
+library(cowplot)
 ```
 
 ## load data
@@ -95,12 +96,12 @@ hurricane %>%
          Pred_E_Sq = Pred_E * Pred_E) %>% 
   group_by(ID) %>% 
   summarise(nobs = n(),
-            Pred_SE = sqrt(sum(Pred_E_Sq))) %>% 
-  arrange(Pred_SE) %>% 
+            Pred_RMSE = sqrt(sum(Pred_E_Sq)/nobs)) %>% 
+  arrange(Pred_RMSE) %>% 
   top_n(10) %>% 
   knitr::kable(
       caption = "Prediction Standard Error of Wind Speed in Ascending Order", 
-      col.names = c("Hurricane ID", "Number of Observation", "Prediction SE"),
+      col.names = c("Hurricane ID", "Number of Observation", "Prediction RMSE"),
       digits = 3
   )
 ```
@@ -111,12 +112,13 @@ hurricane %>%
   group_by(Season) %>% 
   summarise(Ave.Speed = mean(Wind.kt),
             Ave.Pred.Speed = mean(Wind_pred)) %>% 
-  ggplot(aes(x = Season)) +
-  geom_point(aes(y = Ave.Speed, color = "Ave.Speed"), alpha = 0.6) +
-  geom_point(aes(y = Ave.Pred.Speed, color = "Ave.Pred.Speed"), alpha = 0.6) +
-  scale_color_manual(name = "Wind Speed",
-                     values = c("Ave.Speed" = "#404080",  
-                                "Ave.Pred.Speed" = "#69b3a2")) +
+  pivot_longer(Ave.Speed:Ave.Pred.Speed,
+               names_to = "Type",
+               values_to = "Ave.Wind.Speed") %>% 
+  ggplot(aes(x = Season, y = Ave.Wind.Speed)) +
+  geom_point(aes(shape = Type, color = Type), alpha = 0.8, size = 3) + 
+  scale_color_manual(values = c("#404080", "#69b3a2")) +
+  scale_shape_manual(values = c(3, 16)) +
   labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Year",
        x = "Year",
        y = "Wind Speed")
@@ -127,12 +129,13 @@ hurricane %>%
   group_by(Month) %>% 
   summarise(Ave.Speed = mean(Wind.kt),
             Ave.Pred.Speed = mean(Wind_pred)) %>% 
-  ggplot(aes(x = Month)) +
-  geom_point(aes(y = Ave.Speed, color = "Ave.Speed"), alpha = 0.6) +
-  geom_point(aes(y = Ave.Pred.Speed, color = "Ave.Pred.Speed"), alpha = 0.6) +
-  scale_color_manual(name = "Wind Speed",
-                     values = c("Ave.Speed" = "#404080",  
-                                "Ave.Pred.Speed" = "#69b3a2")) +
+  pivot_longer(Ave.Speed:Ave.Pred.Speed,
+               names_to = "Type",
+               values_to = "Ave.Wind.Speed") %>% 
+  ggplot(aes(x = Month, y = Ave.Wind.Speed)) +
+  geom_point(aes(shape = Type, color = Type), alpha = 0.8, size = 3) + 
+  scale_color_manual(values = c("#404080", "#69b3a2")) +
+  scale_shape_manual(values = c(3, 16)) +
   labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Month",
        x = "Month",
        y = "Wind Speed") +
@@ -144,16 +147,18 @@ hurricane %>%
   group_by(Nature) %>% 
   summarise(Ave.Speed = mean(Wind.kt),
             Ave.Pred.Speed = mean(Wind_pred)) %>% 
-  ggplot(aes(x = Nature)) +
-  geom_point(aes(y = Ave.Speed, color = "Ave.Speed"), alpha = 0.6) +
-  geom_point(aes(y = Ave.Pred.Speed, color = "Ave.Pred.Speed"), alpha = 0.6) +
-  scale_color_manual(name = "Wind Speed",
-                     values = c("Ave.Speed" = "#404080",  
-                                "Ave.Pred.Speed" = "#69b3a2")) +
+  pivot_longer(Ave.Speed:Ave.Pred.Speed,
+               names_to = "Type",
+               values_to = "Ave.Wind.Speed") %>% 
+  ggplot(aes(x = Nature, y = Ave.Wind.Speed)) +
+  geom_point(aes(shape = Type, color = Type), alpha = 0.8, size = 3) + 
+  scale_color_manual(values = c("#404080", "#69b3a2")) +
+  scale_shape_manual(values = c(3, 16)) +
   labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Nature",
        x = "Nature",
        y = "Wind Speed")
 ```
+
 
 ```{r}
 hurricane %>% 
@@ -176,7 +181,7 @@ hurricane %>%
          Pred_E_Sq = Pred_E * Pred_E) %>% 
   group_by(ID) %>% 
   summarise(n = n(),
-            Pred_SE = sqrt(sum(Pred_E_Sq))) %>% 
+            Pred_SE = sqrt(sum(Pred_E_Sq)/n)) %>% 
   mutate(nobs = ifelse(n > 50, "More Observation", "Fewer Observation")) %>% 
   group_by(nobs) %>% 
   ggplot(aes(x = nobs, y = Pred_SE)) +
