@@ -1,0 +1,97 @@
+---
+title: "P8160 - Baysian modeling of hurrican trajectories"
+author: "Jiahao Fan, Tianwei Zhao, Yijin Wang, Youlan Shen, Yujia Li"
+date: "2023-04-29"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '2'
+header-includes:
+- \usepackage{fancyhdr}
+- \usepackage{lipsum}
+- \pagestyle{fancy}
+- \fancyhead[R]{\thepage}
+- \fancypagestyle{plain}{\pagestyle{fancy}}
+- \usepackage{algorithm}
+- \usepackage{algpseudocode}
+- \usepackage{amsthm}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+\newpage 
+# Background and Objectives
+As hurricanes affect people, the ability to forecast hurricanes is essential for minimizing the risks in suffered areas. Hereby, a hierarchical Bayesian strategy for modeling North Atlantic hurricane counts since 1950 is illustrated. Model integration would be expected to achieve through a Markov chain Monte Carlo algorithm. Contingent on the availability of values for the covariates, the models can be used to explore the seasonality among track data and make predictive inferences on hurricanes.
+
+The data given has 703 observations and following features are recorded for each hurricanes in the North Atlantic: 
+
+* ID: ID of the hurricanes
+
+* Season: In which the hurricane occurred
+
+* Month: In which the hurricane occurred
+
+* Nature: Nature of the hurricane (ET-Extra tropical;DS-Disturbance;NR-Not rated;SS-Sub tropical; TS-Tropical storm)
+
+* time: dates and time of the record
+
+* Latitude and Longitude: The location of a hurricane check point
+
+* Wind.kt: Maximum wind speed (in Knot) at each check point
+
+
+# Methods
+## Baysian Model  
+## MCMC Algorithm 
+
+
+
+# Results
+## Seasonal Analysis 
+## Prediction 
+
+
+
+# Discussion 
+
+
+
+## Group Contributions {-}
+
+
+\newpage 
+# References {-}
+
+
+
+\newpage 
+# Appendices {-}
+
+## Figures and Tables {-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
