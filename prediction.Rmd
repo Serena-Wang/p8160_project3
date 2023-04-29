@@ -117,7 +117,7 @@ hurricane %>%
   scale_color_manual(name = "Wind Speed",
                      values = c("Ave.Speed" = "#404080",  
                                 "Ave.Pred.Speed" = "#69b3a2")) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed",
+  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Year",
        x = "Year",
        y = "Wind Speed")
 ```
@@ -133,9 +133,10 @@ hurricane %>%
   scale_color_manual(name = "Wind Speed",
                      values = c("Ave.Speed" = "#404080",  
                                 "Ave.Pred.Speed" = "#69b3a2")) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed",
+  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Month",
        x = "Month",
-       y = "Wind Speed")
+       y = "Wind Speed") +
+  theme(axis.text.x = element_text(angle = 15, vjust = 0.5, hjust = 0.2))
 ```
 
 ```{r}
@@ -149,7 +150,7 @@ hurricane %>%
   scale_color_manual(name = "Wind Speed",
                      values = c("Ave.Speed" = "#404080",  
                                 "Ave.Pred.Speed" = "#69b3a2")) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed",
+  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Nature",
        x = "Nature",
        y = "Wind Speed")
 ```
