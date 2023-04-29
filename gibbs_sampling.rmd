@@ -24,6 +24,7 @@ load("hurricane.RData")
 data <- hurricane %>% ungroup()
 ```
 
+## fit a linear mixed effects model for starting values
 ```{r}
 # decide initial values for mcmc by fitting a simple glm :)
 
@@ -38,6 +39,8 @@ glmm_summary <- summary(glmm)
 gamma_init <- glmm_summary$coefficients%>%as.matrix() %>%
   as.data.frame() %>% slice(-1) %>% pull(Estimate)
 ```
+
+## Metropolis Hasting Random Walk
 
 $$\begin{aligned} f(\sigma^2|B, \mu, \Sigma, \gamma, Y)\propto 
 & \prod_{i=1}^{H} det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma)) \times \\
@@ -121,7 +124,7 @@ sigma_squared_log_posterior <- function(sigma_squared, Y, D, B, X, gamma, H, ith
 #' calculate next value for sigma squared in metropolis hasting random walk  
 #' https://towardsdatascience.com/from-scratch-bayesian-inference-markov-chain-monte-carlo-and-metropolis-hastings-in-python-ef21a29e25a
 #' @param curr current sigma squared value
-#' @param a sd in transition distribution Normal(curr, a)
+#' @param a window size in transition distribution Unif(curr-a, curr+a)
 #' @param Y full response vector in shape N x 1 where N is the total number of observations in the data set
 #' @param D full design matrix for random effects for all hurricanes. Its shape is N x 5.
 #' @param B full random effects coefficients matrix in shape 5 x H where H is the total number of hurricanes
@@ -157,8 +160,8 @@ metropolis_hasting_sigma_squared_next_val <- function(curr, a, Y, D, B, X, gamma
 ```
 
 ```{r}
-metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20, 
-                                             numtocompute = 1000, 
+metropolis_hasting_sigma_squared <- function(start_sigma_squared, 
+                                             numtocompute, 
                                              a = 2,
                                              Y, D, B, X, gamma, H, ith_hurricane_idx){
   chain <- rep(NA, numtocompute)
@@ -171,6 +174,7 @@ metropolis_hasting_sigma_squared <- function(start_sigma_squared = 20,
 }
 ```
 
+## starting values
 ```{r}
 a <- 1
 Y <- as.matrix(data$Wind.kt)
@@ -184,19 +188,28 @@ X <- data  %>%
   mutate(n = 1)%>% 
   pivot_wider(names_from = Nature, values_from=n, values_fill=0) %>% 
   ungroup() %>%
-  mutate(intercept = 1) %>%
-  dplyr::select(intercept, April, May, June, July, August, September, October, November, December, Season, ET,NR,SS,TS) %>%
+  dplyr::select( April, May, June, July, August, September, October, November, December, Season, ET,NR,SS,TS) %>%
   as.matrix()
 r <- ranef(glmm) 
 B <-  r$ID %>% as.matrix() %>% t() %>% as.matrix()
-gamma <-c (37.841607,gamma_init) %>% as.matrix() 
-
+B[1,] <-B[1,] + 37.841607
+gamma <- gamma_init %>% as.matrix() 
 ```
 
 ```{r}
 chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 27.2828, 
                                              numtocompute = 500, 
-                                             a = 2, Y, D, B, X, gamma)
+                                             a = 0.8, Y, D, B, X, gamma, H, ith_hurricane_idx)
+```
+
+```{r}
+accept = 0
+for (i in 2:500) {
+  if (chain[i] != chain[i-1]) {
+    accept = accept+1
+  }
+}
+accept/500
 ```
 
 ```{r}
@@ -220,7 +233,6 @@ ith_hurricane_idx <- 1:H |>
 ```
 
 
-B posterior
 ```{r}
 # to get B transpose --> need to transpose B
 # B is 5 x H
@@ -389,6 +401,7 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
   A_post_results <- list()
   gamma_post_results <- list()
   sigma_squared_post_results <- list()
+  chains<-list()
   
   # B first
   B <- B_post(D, start_sigma_squared, start_A, X, start_gamma, start_mu, H, ith_hurricane_idx)
@@ -403,49 +416,46 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     
     print(i)
 
-    B <- B_post(D, 
-                sigma_squared_post_results[[i-1]], 
-                A_post_results[[i-1]], 
-                X, 
-                gamma_post_results[[i-1]], 
-                mu_post_reulsts[[i-1]],
-                H, 
-                ith_hurricane_idx)
+    B <- B_post(D = D, 
+                sigma_squared = sigma_squared_post_results[[i-1]], 
+                A = A_post_results[[i-1]], 
+                X = X, 
+                gamma = gamma_post_results[[i-1]], 
+                mu = mu_post_reulsts[[i-1]],
+                H = H, 
+                ith_hurricane_idx = ith_hurricane_idx)
     
-    mu <- mu_post(A_post_results[[i-1]], 
-                  V, 
-                  B)
-    A <- A_post(nu, 
-                B, 
-                mu, 
-                S,
-                H)
+    mu <- mu_post(A = A_post_results[[i-1]], 
+                  V= V, 
+                  B = B)
+    A <- A_post(nu = nu, 
+                B = B, 
+                mu = mu, 
+                S = S,
+                H = H)
       
-    gamma <- gamma_post(X,
-                        Y, 
-                        D,
-                        B,
-                        sigma_squared_post_results[[i-1]],
-                        H, 
-                        ith_hurricane_idx)
+    gamma <- gamma_post(X = X,
+                        Y = Y, 
+                        D = D,
+                        B = B,
+                        sigma_squared = sigma_squared_post_results[[i-1]],
+                        H = H, 
+                        ith_hurricane_idx = ith_hurricane_idx)
     
     # sigma_squared on its own random walk
-    # not sure it works though
     sigma_squared_chain <- metropolis_hasting_sigma_squared(
-      start_sigma_squared = start_sigma_squared, 
+      start_sigma_squared = sigma_squared_post_results[[i-1]], 
       numtocompute = 500, 
-      a = 2, 
-      Y, 
-      D, 
-      B, 
-      X, 
-      gamma,
-      H, 
-      ith_hurricane_idx)
+      a = 0.8, 
+      Y = Y, 
+      D = D, 
+      B = B, 
+      X = X, 
+      gamma = gamma,
+      H = H, 
+      ith_hurricane_idx = ith_hurricane_idx)
      
-    sigma_squared <- mean(chain[400:500])
-    
-    #sigma_squared <- test_sigma_squared_post(Y, D, B , X, gamma)
+    sigma_squared <- mean(sigma_squared_chain[400:500])
     
     # collect results
     B_post_results[[i]] <- B
@@ -453,6 +463,7 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     A_post_results[[i]] <- A
     gamma_post_results[[i]] <-gamma
     sigma_squared_post_results[[i]] <-sigma_squared
+    chains[[i]] <- sigma_squared_chain
   }
   
   return(list(
@@ -460,7 +471,8 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
     mu = mu_post_reulsts,
     A = A_post_results,
     gamma = gamma_post_results,
-    sigma_squared = sigma_squared_post_results
+    sigma_squared = sigma_squared_post_results,
+    chains = chains
   ))
   
 }
@@ -475,8 +487,9 @@ S <- .7 * diag(5)
 S[lower.tri(S)] <- 0.2
 S[upper.tri(S)] <- 0.2
 
+nitr <- 5
 
-
+set.seed(2023)
 test = hurricane_gibbs_sampling(start_sigma_squared = 27.2828, 
                                 start_A = solve(S),
                                 start_gamma = gamma, 
@@ -487,33 +500,133 @@ test = hurricane_gibbs_sampling(start_sigma_squared = 27.2828,
                                 D = D,
                                 Y = Y,
                                 H = H, 
-                                ith_hurricane_idx = ith_hurricane_idx)
-save(test,file = "test.RData")
+                                ith_hurricane_idx = ith_hurricane_idx,
+                                nitr = nitr)
+#save(test,file = "test.RData")
+```
+
+```{r}
+XYD <- list(X = X, Y = Y, D = D)
+save(XYD,file = "XYD.RData")
+```
+
+## Gibbs sampling posterior plots
+```{r}
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 1:14){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
+}
+```
+```{r}
+par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
+for (i in 1:4){
+  hist(freq = F, nclass = 100, sapply(1:nitr, function(x) test[["gamma"]][[x]][i]), main= paste0("gamma_", i, "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
+for (i in 5:8){
+  hist(freq = F, nclass = 100, sapply(1:nitr, function(x) test[["gamma"]][[x]][i]), main= paste0("gamma_", i, "_value"))
+}
+```
+```{r}
+par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
+for (i in 9:12){
+  hist(freq = F, nclass = 100, sapply(1:nitr, function(x) test[["gamma"]][[x]][i]), main= paste0("gamma_", i, "_value"))
+}
+```
+```{r}
+par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
+for (i in 13:14){
+  hist(freq = F, nclass = 100, sapply(1:nitr, function(x) test[["gamma"]][[x]][i]), main= paste0("gamma_", i, "_value"))
+}
+```
+```{r}
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["mu"]][[x]][i]), xlab = "", ylab = paste0("mu_", i-1, "_value"))
+}
 ```
 
 
 ```{r}
-# beta plots
-apr_beta <- rep(NA, 100)
-may_beta <- rep(NA, 100)
-jun_beta <- rep(NA, 100)
-jul_beta <- rep(NA, 100)
-aug_beta <- rep(NA, 100)
-sep_beta <- rep(NA, 100)
-oct_beta <- rep(NA, 100)
-nov_beta <- rep(NA, 100)
-dec_beta <- rep(NA, 100)
-season_beta <- rep(NA, 100)
-et_beta <- rep(NA, 100)
-nr_beta <- rep(NA, 100)
-ss_beta <- rep(NA, 100)
-ts_beta <- rep(NA, 100)
+par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
+for (i in 2:5){
+  hist(freq = F, nclass = 100, sapply(1:nitr, function(x) test[["mu"]][[x]][i]), main= paste0("mu_", i-1, "_value"))
+}
+```
 
-plot(1:100, type='l', sapply(1:100, function(x) test[["B"]][[x]][1,1]))
+
+```{r}
+beta_0 <- c()
+beta_1 <- c()
+beta_2 <- c()
+beta_3 <- c()
+beta_4 <- c()
+
+for (i in 1:nitr){
+  beta_0 <- c(beta_0, mean(test[["B"]][[i]][1,],na.rm = TRUE))
+  beta_1 <- c(beta_1, mean(test[["B"]][[i]][2,],na.rm = TRUE))
+  beta_2 <- c(beta_2, mean(test[["B"]][[i]][3,],na.rm = TRUE))
+  beta_3 <- c(beta_3, mean(test[["B"]][[i]][4,],na.rm = TRUE))
+  beta_4 <- c(beta_4, mean(test[["B"]][[i]][5,],na.rm = TRUE))
+}
+```
+
+```{r}
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 1:4){
+  plot(eval(parse(text = paste0("beta_", i-1))), type='l', xlab = "", ylab = paste0("beta_", i-1, "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
+for (i in 1:4){
+  hist(eval(parse(text = paste0("beta_", i))), freq = F, nclass = 100, main =  paste0("beta_", i, "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["A"]][[x]][1,i]), xlab = "", ylab = paste0("A_[1,", i,"]", "_value"))
+}
 ```
 ```{r}
-plot(1:100, type='l', sapply(1:100, function(x) test[["gamma"]][[x]][2,1]))
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["A"]][[x]][2,i]), xlab = "", ylab = paste0("A_[2,", i,"]", "_value"))
+}
 ```
 ```{r}
-plot(1:100, type='l', sapply(1:100, function(x) test[["B"]][[x]][3,1]))
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["A"]][[x]][3,i]), xlab = "", ylab = paste0("A_[3,", i,"]", "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["A"]][[x]][4,i]), xlab = "", ylab = paste0("A_[4,", i,"]", "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["A"]][[x]][5,i]), xlab = "", ylab = paste0("A_[5,", i,"]", "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
+for (r in 1:5){
+  for (i in 1:5){
+    hist(freq = F, nclass = 100, sapply(1:nitr, function(x) test[["A"]][[x]][r,i]), main= paste0("A_[",r,",", i,"]", "_value"))
+  }
+}
 ```
