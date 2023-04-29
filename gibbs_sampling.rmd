@@ -205,7 +205,7 @@ chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 27.2828,
 ```{r}
 accept = 0
 for (i in 2:500) {
-  if (chain[i] != chain[i-1]) {
+  if (test[["chains"]][[3]][i] != test[["chains"]][[3]][i-1]) {
     accept = accept+1
   }
 }
@@ -487,9 +487,9 @@ S <- .7 * diag(5)
 S[lower.tri(S)] <- 0.2
 S[upper.tri(S)] <- 0.2
 
-nitr <- 5
+nitr <- 6000
 
-set.seed(2023)
+set.seed(2)
 test = hurricane_gibbs_sampling(start_sigma_squared = 27.2828, 
                                 start_A = solve(S),
                                 start_gamma = gamma, 
@@ -502,7 +502,7 @@ test = hurricane_gibbs_sampling(start_sigma_squared = 27.2828,
                                 H = H, 
                                 ith_hurricane_idx = ith_hurricane_idx,
                                 nitr = nitr)
-#save(test,file = "test.RData")
+save(test,file = "test.RData")
 ```
 
 ```{r}
@@ -583,8 +583,8 @@ for (i in 1:4){
 ```
 
 ```{r}
-par(mfrow=c(2,2),mar = c(2, 5, 1, 1))
-for (i in 1:4){
+par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
+for (i in 1:5){
   hist(eval(parse(text = paste0("beta_", i))), freq = F, nclass = 100, main =  paste0("beta_", i, "_value"))
 }
 ```
@@ -630,3 +630,13 @@ for (r in 1:5){
   }
 }
 ```
+
+
+```{r}
+par(mfrow=c(1,1),mar = c(2, 5, 1, 1))
+for (i in 1:1){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test[["sigma_squared"]][[x]][1]), xlab = "", ylab = "sigma_squared")
+}
+```
+
