@@ -37,19 +37,19 @@ $$f_{\Sigma^{-1}}(\Sigma^{-1})   = |\Sigma^{-1}|^{\frac{\nu-d-1}{2}}exp({-\frac{
  
 3.
 
-$$\gamma \sim MVN(\begin{bmatrix} 0 \\ 0\\ ... \\0 \end{bmatrix}, 0.005^2I_{15})$$
+$$\gamma \sim MVN(\begin{bmatrix} 0 \\ 0\\ ... \\0 \end{bmatrix}, 0.005^2I_{14})$$
 
-Since Month and Nature are categorical variables, the dimension of the $\gamma$ is $15\times1$.
+Since Month and Nature are categorical variables, the dimension of the $\gamma$ is $14\times1$.
 
-$$f_\gamma(\gamma) = (15*0.005^2)^{-1/2} exp(-\frac{\gamma ^\intercal 0.005^2I_{15}\gamma}{2}) \propto exp(-\frac{400\gamma ^\intercal\gamma}{2}) $$
+$$f_\gamma(\gamma) = (14 \times 0.005^2)^{-1/2} exp(-\frac{\gamma ^\intercal 0.005^2I_{14}\gamma}{2}) \propto exp(-\frac{400\gamma ^\intercal\gamma}{2}) $$
 
 4. 
 
 $$\sigma \sim Half-Cauchy(0,10)$$
-$$f_\sigma(\sigma)  = \frac{2*10}{\pi(\sigma^2+10^2)}$$
+$$f_\sigma(\sigma)  = \frac{2 \times 10}{\pi(\sigma^2+10^2)}$$
 By transformation theorem 
 
-$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} \frac{1}{2\sigma}\propto \frac{1}{\pi(\sigma^2+10^2)\sigma}$$
+$$f_{\sigma^2}(\sigma^2)  = \frac{2 \times 10}{\pi(\sigma^2+10^2)} \frac{1}{2\sigma}\propto \frac{1}{\pi(\sigma^2+10^2)\sigma}$$
 
 
 ## Likelihood
@@ -101,7 +101,7 @@ $$ \begin{aligned} f(\mu) =& det(V)^{\frac{-1}{2}}exp({-\frac{\mu^\intercal V^{-
 We'll only use $f_{\Sigma^{-1}}$ because only $\Sigma^{-1}$ shows up in the likelihood equation. We denote $A = \Sigma^{-1}$ in the posterior. 
 
 $$f_{\Sigma^{-1}}(\Sigma^{-1})  \propto |\Sigma^{-1}|^{\frac{\nu-5-1}{2}}exp({-\frac{tr(S\Sigma^{-1})}{2}}) $$ 
-$$f_{\sigma^2}(\sigma^2)  = \frac{2*10}{\pi(\sigma^2+10^2)} \frac{1}{2\sigma}\propto \frac{1}{\pi(\sigma^2+10^2)\sigma}$$
+$$f_{\sigma^2}(\sigma^2)  = \frac{2\times10}{\pi(\sigma^2+10^2)} \frac{1}{2\sigma}\propto \frac{1}{\pi(\sigma^2+10^2)\sigma}$$
 $$\begin{aligned}f_{\gamma}(\gamma) =&exp(-\frac{400\gamma ^\intercal\gamma}{2})\end{aligned}$$
 
 Final posterior
