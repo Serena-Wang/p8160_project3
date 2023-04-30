@@ -21,10 +21,10 @@ $$\epsilon_i \sim N(0, \sigma^2)$$
 ## Priors
 
 1. 
-$$\begin{bmatrix}\mu_{0,i} \\\mu_{1,i}\\ \mu_{2,i} \\\mu_{3,i} \\\mu_{4,i}\end{bmatrix} \sim MVN(\begin{bmatrix}0 \\0\\ 0 \\0 \\0\end{bmatrix},
+$$\begin{bmatrix}\mu_{0} \\\mu_{1}\\ \mu_{2} \\\mu_{3} \\\mu_{4}\end{bmatrix} \sim MVN(\begin{bmatrix}0 \\0\\ 0 \\0 \\0\end{bmatrix},
 V)$$
 
-$$ f_{\mu_i}(\mu_i) \propto det(V)^{\frac{-1}{2}}e^{\frac{-1}{2}\mu_i^\intercal V^{-1}\mu_i} \propto e^{\frac{-1}{2}\mu_i^\intercal V^{-1}\mu_i}$$
+$$ f_{\mu}(\mu) \propto det(V)^{\frac{-1}{2}}e^{\frac{-1}{2}\mu^\intercal V^{-1}\mu} \propto e^{\frac{-1}{2}\mu^\intercal V^{-1}\mu}$$
 
 2. 
 $$
@@ -58,7 +58,7 @@ Because random effects coefficients $\beta_i$ is normal, $Y_i|\beta_i$ also foll
 
 For each hurricane $Y_i$
 
-$$\begin{aligned}Y_i|\beta_i, \mu_i, \sigma^2, \Sigma, \gamma \sim & MVN(\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+ \beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma,  \sigma^2I_{n_i}) \\
+$$\begin{aligned}Y_i|\beta_i, \mu, \sigma^2, \Sigma, \gamma \sim & MVN(\beta_{0,i}+\beta_{1,i}Y_{i}(t) + \beta_{2,i}\Delta_{i,1}(t)+ \beta_{3,i}\Delta_{i,2}(t) +\beta_{4,i}\Delta_{i,3}(t)  + \mathbf{X}_i\gamma,  \sigma^2I_{n_i}) \\
 = & MVN(D_{i}\beta_{i}+X_i\gamma,  \sigma^2I_{n_i})\end{aligned}$$
 
 where 
@@ -67,12 +67,12 @@ $$Y_{i} = \begin{bmatrix}Y_i(t_2) \\Y_i(t_3) \\ \vdots \\ Y_i(t=t_j) \\ \vdots \
 $$\begin{aligned}D_{i}(t) =& \begin{bmatrix} 1 & Y_i(t) & \Delta_{i,1}(t)&\Delta_{i,2}(t)& \Delta_{i,3}(t)\end{bmatrix} \\
 =&\begin{bmatrix} 1 & Y_i(t=t_1 ) & \Delta_{i,1}(t_1, t_0)&\Delta_{i,2}(t_1, t_0)& \Delta_{i,3}(t_1, t_0)\\
 1 & Y_i(t=t_2) & \Delta_{i,1}(t_2, t_1)&\Delta_{i,2}(t_2, t_1)& \Delta_{i,3}(t_2, t_1)\\ \dots\\ 1 & Y_i(t=t_{j-1}) & \Delta_{i,1}(t_{j-1}, t_{j-2})&\Delta_{i,2}(t_{j-1}, t_{j-2})& \Delta_{i,3}(t_{j-1}, t_{j-2})\\\dots\\ 1 & Y_i(t = t_{n_{i-1}} ) & \Delta_{n,1}(t_{n_{i-1}} - t_{n_{i-2}})&\Delta_{n,2}(t_{n_{i-1}} - t_{n_{i-2}})& \Delta_{n,3}(t_{n_{i-1}} - t_{n_{i-2}})\end{bmatrix}_{n_i\times 5}\end{aligned}$$
-$$\beta_i = \begin{bmatrix} \beta_{0,i} \\\beta_{1,i}\\\beta_{2,i} \\\beta_{3,i}\\\beta_{4,i}\end{bmatrix}_{5\times 1}$$ $$X_i = \begin{bmatrix} X_{i,1} & x_{i,2} & X_{i,3}\end{bmatrix}_{n_i\times 15}$$ 
-$$\gamma = \begin{bmatrix} \gamma_1 \\ \gamma_2 \\... \\ \gamma_{15}\end{bmatrix}_{15\times 1}$$
+$$\beta_i = \begin{bmatrix} \beta_{0,i} \\\beta_{1,i}\\\beta_{2,i} \\\beta_{3,i}\\\beta_{4,i}\end{bmatrix}_{5\times 1}$$ $$X_i = \begin{bmatrix} X_{i,month} & x_{i,season} & X_{i,type}\end{bmatrix}_{n_i\times 14}$$ 
+$$\gamma = \begin{bmatrix} \gamma_1 \\ \gamma_2 \\... \\ \gamma_{14}\end{bmatrix}_{14\times 1}$$
 
 Likelihood for the ith hurricane is 
 
-$$f(Y_i|\beta_i,\mu_i, \sigma^2, \Sigma, \gamma) = det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma) })$$
+$$f(Y_i|\beta_i,\mu, \sigma^2, \Sigma, \gamma) = det(\sigma^2I_{n_i})^{-1/2}exp(-\frac{1}{2}{(Y_i - D_{i}\beta_{i}-X_i\gamma)^\intercal(\sigma^2I_{n_i})^{-1}(Y_i - D_{i}\beta_{i}-X_i\gamma) })$$
 
 To calculate the joint likelihood for $Y = \begin{bmatrix}Y_1 & Y_2 \dots Y_i \dots Y_H\end{bmatrix}^\intercal$, we denote total number of observations for all hurricanes as $N = \sum_{i=0}^{H} n_i$ where $n_i$ is the total number of observation for the ith hurricane and $H$ is the total number of hurricanes.
 
