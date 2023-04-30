@@ -1,0 +1,22 @@
+---
+title: "gibbs_sampling_and_random_walk"
+author: "Yijin Wang"
+date: "2023-04-30"
+output: 
+  pdf_document:
+    keep_tex: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Given the fact that we can easily identify the distribution that most of the conditional posteriors follows, we choose to use Gibbs sampling. Gibbs sampling is an efficient sampler to create approximated data that follows a target joint distribution with several conditional distributions. It is a sequential approach that updates parameter value one by one with information of other parameters. 
+
+Still, we could not find a regular distribution that has the density function that matches with the conditional posterior of $\sigma^2$. Therefore, we incorporated Metropolis Hasting Random Walk into Gibbs sampling. Metropolis Hasting Random Walk finds approximated values of $\sigma^2$ by accepting and rejecting proposed value with an acceptance probability that helps retain balance of the system. In our algorithm, we worked with log-scaled posterior values instead of the original-scaled posterior because $\frac{1}{\sigma^N}$ dominates the entire posterior value where $N$ is the total number of observations in the dataset.
+
+In our investigation of hurricane wind speed, we used Gibbs sampling and as Metropolis Hasting Random Walk as the following:
+
+![Gibbs Sampling](algo_fig/gibbs_sampling.png)
+
+![Metropolis Hasting Random Walk](algo_fig/random_walk.png)
