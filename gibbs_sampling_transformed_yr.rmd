@@ -1,0 +1,337 @@
+---
+title: "gibbs_sampling_transformed_yr.rmd"
+author: "Yijin Wang"
+date: "2023-05-01"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message = FALSE}
+library(tidyverse)
+library(lme4)
+library(LaplacesDemon)
+library(purrr)
+library(MASS)
+source("sampling_fun.R")
+```
+
+## load data
+
+```{r}
+load("hurricane.RData")
+data2 <- hurricane %>% ungroup() %>%
+  mutate(Season = Season - 1949)
+```
+
+## fit a linear mixed effects model for starting values
+```{r}
+# decide initial values for mcmc by fitting a simple glm :)
+
+glmm <- lmer(Wind.kt ~ Month + Season + Nature + 
+                (1 +Wind_prev + Lat_change+ Long_change+Wind_change |ID),
+               data = data2)
+summary(glmm)
+```
+
+```{r}
+glmm_summary <- summary(glmm)
+gamma_init <- glmm_summary$coefficients%>%as.matrix() %>%
+  as.data.frame() %>% slice(-1) %>% pull(Estimate)
+```
+
+
+```{r}
+a <- 1
+Y <- as.matrix(data2$Wind.kt)
+D <- data2 %>% mutate(intercept = 1) %>% dplyr::select(intercept, Wind_prev, Lat_change, Long_change, Wind_change) %>% as.matrix()
+X <- data2 %>%
+  mutate(index =1:nrow(data2))%>%
+  group_by(index) %>%
+  dplyr::select(Month, Season, Nature) %>%
+  mutate(n = 1)%>% 
+  pivot_wider(names_from = Month, values_from=n, values_fill=0) %>% 
+  mutate(n = 1)%>% 
+  pivot_wider(names_from = Nature, values_from=n, values_fill=0) %>% 
+  ungroup() %>%
+  dplyr::select( April, May, June, July, August, September, October, November, December, Season, ET,NR,SS,TS) %>%
+  as.matrix()
+r <- ranef(glmm) 
+B <-  r$ID %>% as.matrix() %>% t() %>% as.matrix()
+B[1,] <-B[1,] + 31.580903
+gamma <- gamma_init %>% as.matrix() 
+```
+
+```{r}
+chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 27.2868, 
+                                             numtocompute = 500, 
+                                             a = 0.8, Y, D, B, X, gamma, H, ith_hurricane_idx)
+```
+
+```{r}
+accept = 0
+for (i in 2:500) {
+  if (chain[i] != chain[i-1]) {
+    accept = accept+1
+  }
+}
+accept/500
+```
+
+
+```{r}
+X_with_id <- cbind(as.numeric(factor(data2$ID)), X)
+#number of hurricanes
+H <- max(X_with_id[,1])
+ith_hurricane_idx <- 1:H |>
+  map(\(i) which(X_with_id[,1] == i))
+```
+
+
+```{r}
+V <- .8 * diag(5)
+V[lower.tri(V)] <- 0.1
+V[upper.tri(V)] <- 0.1
+
+S <- .7 * diag(5)
+S[lower.tri(S)] <- 0.2
+S[upper.tri(S)] <- 0.2
+
+nitr <- 1000
+
+set.seed(2)
+test2 = hurricane_gibbs_sampling(start_sigma_squared = 27.2856, 
+                                start_A = solve(S),
+                                start_gamma = gamma, 
+                                start_mu = rowMeans(B) %>% as.matrix(),
+                                V = V ,
+                                S = S,
+                                X = X,
+                                D = D,
+                                Y = Y,
+                                H = H, 
+                                ith_hurricane_idx = ith_hurricane_idx,
+                                nitr = nitr)
+save(test2,file = "test2.RData")
+```
+
+## Gibbs sampling posterior plots
+```{r}
+#jpeg(file="./mcmc_results_fig2/gamma/gamma_1-4_chain.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 1:4){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/gamma/gamma_5-8_chain.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 5:8){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig/gamma/gamma_9-12_chain.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 9:12){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/gamma/gamma_13-14_chain.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
+for (i in 13:14){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/gamma/gamma_acf.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(5,3),mar = c(2, 5, 1, 1))
+for (i in 1:14){
+  ac <- acf(sapply(501:nitr, function(x) test2[["gamma"]][[x]][i,1]), lag.max = 300,plot = FALSE)
+  plot(ac, ylab = paste0("gamma_", i, "_acf_value"))
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig/gamma/gamma_histograms.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(5,3),mar = c(2, 5, 1, 1))
+for (i in 1:14){
+  hist(freq = F, nclass = 100, sapply(501:nitr, function(x) test2[["gamma"]][[x]][i]), main= paste0("gamma_", i, "_value"))
+}
+#dev.off()
+```
+
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["mu"]][[x]][i]), xlab = "", ylab = paste0("mu_", i-1, "_value"))
+}
+```
+```{r}
+par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  ac <- acf(sapply(501:nitr, function(x) test2[["mu"]][[x]][i]), lag.max = 300,plot = FALSE)
+  plot(ac, ylab = paste0("mu_", i-1, "_acf_value"))
+}
+```
+```{r}
+#jpeg(file="./mcmc_results_fig2/mu/mu_histograms.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  hist(freq = F, nclass = 100, sapply(501:nitr, function(x) test2[["mu"]][[x]][i]), main= paste0("mu_", i-1, "_value"))
+}
+#dev.off()
+```
+
+```{r}
+beta_0 <- c()
+beta_1 <- c()
+beta_2 <- c()
+beta_3 <- c()
+beta_4 <- c()
+
+for (i in 1:nitr){
+  beta_0 <- c(beta_0, mean(test2[["B"]][[i]][1,],na.rm = TRUE))
+  beta_1 <- c(beta_1, mean(test2[["B"]][[i]][2,],na.rm = TRUE))
+  beta_2 <- c(beta_2, mean(test2[["B"]][[i]][3,],na.rm = TRUE))
+  beta_3 <- c(beta_3, mean(test2[["B"]][[i]][4,],na.rm = TRUE))
+  beta_4 <- c(beta_4, mean(test2[["B"]][[i]][5,],na.rm = TRUE))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(eval(parse(text = paste0("beta_", i-1))), type='l', xlab = "", ylab = paste0("beta_", i-1, "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  val <- eval(parse(text = paste0("beta_", i-1)))
+  ac <- acf(val[501:nitr], lag.max = 300,plot = FALSE)
+  plot(ac, ylab = paste0("beta_", i-1, "_acf_value"))
+}
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/beta/beta_histograms.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  val <- eval(parse(text = paste0("beta_", i-1)))
+  hist(val[501:nitr], freq = F, nclass = 100, main =  paste0("beta_", i-1, "_value"))
+}
+#dev.off()
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][1,i]), xlab = "", ylab = paste0("A_[1,", i,"]", "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][2,i]), xlab = "", ylab = paste0("A_[2,", i,"]", "_value"))
+}
+```
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][3,i]), xlab = "", ylab = paste0("A_[3,", i,"]", "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][4,i]), xlab = "", ylab = paste0("A_[4,", i,"]", "_value"))
+}
+```
+
+```{r}
+par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][5,i]), xlab = "", ylab = paste0("A_[5,", i,"]", "_value"))
+}
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/A/A_1-3_rows_acf.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
+
+for (r in 1:3){
+  for (i in 1:5){
+    ac <- acf(sapply(501:nitr, function(x) test2[["A"]][[x]][r,i]), lag.max = 300,plot = FALSE)
+    plot(ac, ylab = paste0("A_[",r,",", i,"]", "_acf_value"))
+  }
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/A/A_4-5_rows_acf.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
+
+for (r in 4:5){
+  for (i in 1:5){
+    ac <- acf(sapply(501:nitr, function(x) test2[["A"]][[x]][r,i]), lag.max = 300,plot = FALSE)
+    plot(ac, ylab = paste0("A_[",r,",", i,"]", "_acf_value"))
+  }
+}
+#dev.off()
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/A/A_1-3_rows_histograms.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
+for (r in 1:3){
+  for (i in 1:5){
+    hist(freq = F, nclass = 100, sapply(501:nitr, function(x) test2[["A"]][[x]][r,i]), main= paste0("A_[",r,",", i,"]", "_value"))
+  }
+}
+#dev.off()
+
+```
+
+```{r}
+#jpeg(file="./mcmc_results_fig2/A/A_4-5_rows_histograms.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
+for (r in 4:5){
+  for (i in 1:5){
+    hist(freq = F, nclass = 100, sapply(501:nitr, function(x) test2[["A"]][[x]][r,i]), main= paste0("A_[",r,",", i,"]", "_value"))
+  }
+}
+#dev.off()
+```
+
+
+```{r}
+#jpeg(file="./mcmc_results_fig/sigma_squared/sigma_squared.png", width = 1200, height = 600, quality = 100)
+par(mfrow=c(3,1),mar = c(2, 5, 1, 1))
+plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["sigma_squared"]][[x]][1]), xlab = "", ylab = "sigma_squared")
+hist(freq = F, nclass = 100, sapply(501:nitr, function(x) test2[["sigma_squared"]][[x]][1]), main= "sigma_squared value")
+ ac <- acf(sapply(501:nitr, function(x) test2[["sigma_squared"]][[x]][1]), lag.max = 300,plot = FALSE)
+  plot(ac, ylab = "sigma_squared_acf_value")
+#dev.off()
+```
