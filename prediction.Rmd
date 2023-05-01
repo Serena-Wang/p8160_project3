@@ -64,6 +64,7 @@ beta_estimate <- get_estimate(beta_estimate, iter, B)
 gamma_estimate <- get_estimate(gamma_estimate, iter, gamma)
 ```
 
+
 ## Get Prediction
 
 ```{r}
@@ -85,6 +86,12 @@ mu_H <- as.matrix(mu_H)
 Wind_pred <- mu_H + X %*% gamma_estimate
 ```
 
+```{r}
+# get the posterior mean
+# colnames(beta_estimate) <- unique(data$ID)
+# colnames(gamma_estimate) <- "gamma_estimate"
+```
+
 ## Analysis on Prediction
 
 ```{r}
@@ -98,7 +105,7 @@ hurricane %>%
   summarise(nobs = n(),
             Pred_RMSE = sqrt(sum(Pred_E_Sq)/nobs)) %>% 
   arrange(Pred_RMSE) %>% 
-  top_n(10) %>% 
+  head(10) %>% 
   knitr::kable(
       caption = "Prediction Standard Error of Wind Speed in Ascending Order", 
       col.names = c("Hurricane ID", "Number of Observation", "Prediction RMSE"),
