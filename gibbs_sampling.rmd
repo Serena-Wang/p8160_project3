@@ -405,12 +405,36 @@ hurricane_gibbs_sampling <- function(start_sigma_squared,
   
   # B first
   B <- B_post(D, start_sigma_squared, start_A, X, start_gamma, start_mu, H, ith_hurricane_idx)
+  mu <- mu_post(A = start_A, V= V, B = B)
+  A <- A_post(nu = nu, B = B, mu = mu, S = S, H = H)
+  gamma <- gamma_post(X = X, 
+                      Y = Y, 
+                      D = D,
+                      B = B,
+                      sigma_squared = start_sigma_squared,
+                      H = H, 
+                      ith_hurricane_idx = ith_hurricane_idx)
+  
+  sigma_squared_chain <- metropolis_hasting_sigma_squared(
+      start_sigma_squared = start_sigma_squared, 
+      numtocompute = 500, 
+      a = 0.8, 
+      Y = Y, 
+      D = D, 
+      B = B, 
+      X = X, 
+      gamma = gamma,
+      H = H, 
+      ith_hurricane_idx = ith_hurricane_idx)
+     
+  sigma_squared <- mean(sigma_squared_chain[400:500])
   
   B_post_results[[1]] <- B
-  mu_post_reulsts[[1]] <- start_mu
-  A_post_results[[1]] <- start_A
-  gamma_post_results[[1]] <-start_gamma
-  sigma_squared_post_results[[1]] <-start_sigma_squared
+  mu_post_reulsts[[1]] <- mu
+  A_post_results[[1]] <- A
+  gamma_post_results[[1]] <-gamma
+  sigma_squared_post_results[[1]] <-sigma_squared
+  chains[[1]] <- sigma_squared_chain
   
   for (i in 2:nitr){
     
@@ -531,7 +555,7 @@ dev.off()
 ```
 
 ```{r}
-jpeg(file="./mcmc_results_fig/gamma/gamma_9-12_chain.png", width = 1200, height = 600, quality = 100)
+#jpeg(file="./mcmc_results_fig/gamma/gamma_9-12_chain.png", width = 1200, height = 600, quality = 100)
 par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
 for (i in 9:12){
   
