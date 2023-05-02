@@ -38,6 +38,7 @@ library(car)
 library(gtsummary)
 library(corrplot)
 library(caret)
+library(patchwork)
 ```
 
 ## Summary table and Plot for hurricane data
@@ -60,11 +61,12 @@ library(maps)
 map <- ggplot(data = dt, aes(x = Longitude, y = Latitude)) + 
   geom_polygon(data = map_data(map = 'world'), 
                aes(x = long, y = lat, group = group))
-map +
+map1 <- map +
   stat_summary_2d(data = dt, aes(x = Longitude, y = Latitude, z = dt$Wind.kt), 
                   fun = median, binwidth = c(1, 1), 
                   show.legend = TRUE, alpha = 0.75) + 
-  ggtitle(paste0("Figure 1: Atlantic Windstorm mean knot"))
+  ggtitle(paste0("Atlantic Windstorm mean knot"))
+map1
 ```
 
 ## Track of Each Hurricane on Map
@@ -125,7 +127,7 @@ hurricane <- hurricane %>%
 ## Exploratory Plots of Hurricane in each 
 
 ```{r}
-hurricane %>% 
+map2 <- hurricane %>% 
   group_by(Month) %>% 
   summarise(count = n(),
             Ave.Speed = mean(Wind.kt)) %>% 
@@ -137,12 +139,13 @@ hurricane %>%
     sec.axis = sec_axis(~.*0.01, name = "Average Wind Speed")) +
   scale_color_manual(name = "Speed",
                      values = c(" " = "#404080")) +
-  labs(title = "Figure 2: Hurricane Frequency and Average Wind Speed by Month") +
+  labs(title = "Hurricane Frequency and Average Wind Speed by Month") +
   theme(axis.text.x = element_text(angle = 15, vjust = 0.5, hjust = 0.2))
+map2
 ```
 
 ```{r}
-hurricane %>% 
+map3 <- hurricane %>% 
   group_by(Season) %>% 
   summarise(count = n(),
             Ave.Speed = mean(Wind.kt)) %>% 
@@ -155,17 +158,19 @@ hurricane %>%
     sec.axis = sec_axis(~.*0.1, name = "Average Wind Speed")) +
   scale_color_manual(name = "Speed",
                      values = c(" " = "#404080")) +
-  labs(title = "Figure 3: Hurricane Frequency and Average Wind Speed by Year",
+  labs(title = "Hurricane Frequency and Average Wind Speed by Year",
        x = "Year")
+map3
 ```
 
 ```{r}
-hurricane %>% 
+map4 <- hurricane %>% 
   group_by(Nature) %>% 
   ggplot(aes(x = Nature, y = Wind.kt)) +
   geom_boxplot(fill = "#69b3a2", alpha = 0.6) +
-  labs(title = "Figure 4: Hurricane Wind Speed Boxplot by Nature",
+  labs(title = "Hurricane Wind Speed Boxplot by Nature",
        x = "Nature")
+map4
 ```
 
 

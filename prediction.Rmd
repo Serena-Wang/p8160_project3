@@ -17,10 +17,11 @@ library(cowplot)
 
 ```{r}
 load("hurricane.RData")
-data <- hurricane %>% ungroup()
-load("test.RData")
-B <- test$B
-gamma <- test$gamma
+data <- hurricane %>% ungroup() %>%
+  mutate(Season = Season - 1949)
+load("test2.RData")
+B <- test2$B
+gamma <- test2$gamma
 ```
 
 ```{r}
@@ -86,10 +87,21 @@ mu_H <- as.matrix(mu_H)
 Wind_pred <- mu_H + X %*% gamma_estimate
 ```
 
+\pagebreak
+
 ```{r}
 # get the posterior mean
-# colnames(beta_estimate) <- unique(data$ID)
-# colnames(gamma_estimate) <- "gamma_estimate"
+colnames(beta_estimate) <- unique(data$ID)
+colnames(gamma_estimate) <- "gamma_estimate"
+beta_estimate[, 1:5] %>% 
+  knitr::kable(
+    caption = "Random Effects Beta Estimates for Each Hurricane",
+    digits = 3)
+gamma_estimate %>% 
+  knitr::kable(
+    caption = "Fixed Effects Gamma Estimates for Each Covariate",
+    digits = 3
+  )
 ```
 
 ## Analysis on Prediction
@@ -126,7 +138,7 @@ hurricane %>%
   geom_point(aes(shape = Type, color = Type), alpha = 0.8, size = 3) + 
   scale_color_manual(values = c("#404080", "#69b3a2")) +
   scale_shape_manual(values = c(3, 16)) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Year",
+  labs(title = "Actual Wind Speed V.S. Prediction Wind Speed By Year",
        x = "Year",
        y = "Wind Speed")
 ```
@@ -143,7 +155,7 @@ hurricane %>%
   geom_point(aes(shape = Type, color = Type), alpha = 0.8, size = 3) + 
   scale_color_manual(values = c("#404080", "#69b3a2")) +
   scale_shape_manual(values = c(3, 16)) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Month",
+  labs(title = "Actual Wind Speed V.S. Prediction Wind Speed By Month",
        x = "Month",
        y = "Wind Speed") +
   theme(axis.text.x = element_text(angle = 15, vjust = 0.5, hjust = 0.2))
@@ -161,24 +173,8 @@ hurricane %>%
   geom_point(aes(shape = Type, color = Type), alpha = 0.8, size = 3) + 
   scale_color_manual(values = c("#404080", "#69b3a2")) +
   scale_shape_manual(values = c(3, 16)) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed By Nature",
+  labs(title = "Actual Wind Speed V.S. Prediction Wind Speed By Nature",
        x = "Nature",
-       y = "Wind Speed")
-```
-
-
-```{r}
-hurricane %>% 
-  filter(ID == "GINGER.1971") %>% 
-  mutate(Obs = 1:116) %>% 
-  ggplot(aes(x = Obs)) +
-  geom_line(aes(y = Wind.kt, color = "Speed"), alpha = 0.6) +
-  geom_line(aes(y = Wind_pred, color = "Pred.Speed"), alpha = 0.6) +
-  scale_color_manual(name = "Wind Speed",
-                     values = c("Speed" = "#404080",  
-                                "Pred.Speed" = "#69b3a2")) +
-  labs(title = "Figure: Actual Wind Speed V.S. Prediction Wind Speed For GINGER.1971",
-       x = "Time",
        y = "Wind Speed")
 ```
 
@@ -193,8 +189,56 @@ hurricane %>%
   group_by(nobs) %>% 
   ggplot(aes(x = nobs, y = Pred_SE)) +
   geom_boxplot(fill = "#69b3a2", alpha = 0.6) +
-  labs(title = "Figure: Prediction Standard Error of Wind Speed by Number of Observation",
+  labs(title = "Lowest Prediction Standard Error of Wind Speed by Number of Observation",
        x = "Observation",
        y = "Prediction Standard Error")
+```
+
+```{r}
+hurricane %>% 
+  filter(ID == "GINGER.1971") %>% 
+  mutate(Obs = 1:116) %>% 
+  ggplot(aes(x = Obs)) +
+  geom_line(aes(y = Wind.kt, color = "Speed"), alpha = 0.6) +
+  geom_line(aes(y = Wind_pred, color = "Pred.Speed"), alpha = 0.6) +
+  scale_color_manual(name = "Wind Speed",
+                     values = c("Speed" = "#404080",  
+                                "Pred.Speed" = "#69b3a2")) +
+  labs(title = "Actual Wind Speed V.S. Prediction Wind Speed For GINGER.1971",
+       x = "Time",
+       y = "Wind Speed")
+```
+
+\pagebreak
+
+```{r}
+hurricane %>% 
+  mutate(Pred_E = Wind.kt - Wind_pred,
+         Pred_E_Sq = Pred_E * Pred_E) %>% 
+  group_by(ID) %>% 
+  summarise(nobs = n(),
+            Pred_RMSE = sqrt(sum(Pred_E_Sq)/nobs)) %>% 
+  arrange(Pred_RMSE) %>% 
+  top_n(10) %>% 
+  knitr::kable(
+      caption = "Highest Prediction Standard Error of Wind Speed in Ascending Order", 
+      col.names = c("Hurricane ID", "Number of Observation", "Prediction RMSE"),
+      digits = 3
+  )
+```
+
+```{r}
+hurricane %>% 
+  filter(ID == "CHARLEY.2004") %>% 
+  mutate(Obs = 1:28) %>% 
+  ggplot(aes(x = Obs)) +
+  geom_line(aes(y = Wind.kt, color = "Speed"), alpha = 0.6) +
+  geom_line(aes(y = Wind_pred, color = "Pred.Speed"), alpha = 0.6) +
+  scale_color_manual(name = "Wind Speed",
+                     values = c("Speed" = "#404080",  
+                                "Pred.Speed" = "#69b3a2")) +
+  labs(title = "Actual Wind Speed V.S. Prediction Wind Speed For GINGER.1971",
+       x = "Time",
+       y = "Wind Speed")
 ```
 
