@@ -11,9 +11,8 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(kableExtra)
 library(rlist)
-load("test.RData")
+load("test2.RData")
 ```
 
 ## Explore the seasonal differences
@@ -24,9 +23,77 @@ To analyze the problem of whether there are seasonal differences in hurricane wi
 ### The gamma credible interval for hurrican speed by month
 
 ```{r}
-df = t(list.cbind(test[["gamma"]][3001:6000] ))
+df = t(list.cbind(test2[["gamma"]][3001:6000] ))
 df = data.frame(df)
 df$index = 3001:6000
+month_df = df[,c(1:9,15)] %>%
+  pivot_longer(!index,names_to = "Month", values_to = "estimate")
+month_df$Month = factor(month_df$Month, levels = c(
+  "April","May","June","July","August","September","October", "November","December"
+))
+```
+
+\pagebreak
+
+```{r}
+month_df %>% group_by(Month) %>%
+summarise(quantile(estimate,0.025),quantile(estimate,0.975)) %>% 
+   knitr::kable(
+      caption = "95% Credible Intervals of Gamma", 
+      col.names = c("Month", "Lower Bound", "Upper Bound"),
+      digits = 5
+  )
+```
+
+```{r}
+Year <- df$Season %>% 
+  quantile(c(0.025,0.975)) %>% 
+  as.tibble()
+colnames(Year) <- "Year"
+Year %>% 
+  t() %>% 
+  knitr::kable(
+      caption = "95% Credible Intervals of Gamma", 
+      col.names = c("Lower Bound", "Upper Bound"),
+      digits = 5
+  )
+```
+
+```{r}
+month_df = df[,c(11:14,15)] %>%
+pivot_longer(!index,names_to = "Nature", values_to = "estimate")
+month_df$Nature = factor(month_df$Nature)
+month_df %>% group_by(Nature) %>%
+summarise(quantile(estimate,0.025),quantile(estimate,0.975)) %>% 
+   knitr::kable(
+      caption = "95% Credible Intervals of Gamma", 
+      col.names = c("Nature", "Lower Bound", "Upper Bound"),
+      digits = 5
+  )
+```
+
+```{r}
+df$Summer = (df$July + df$August +df$September + df$October)/4
+df$Non.Summer = (df$April + df$May + df$June +df$November + df$December)/5
+df$Diff = df$Summer - df$Non.Summer
+month_df = df[,c(15:18)] %>%
+pivot_longer(!index,names_to = "Season", values_to = "estimate")
+month_df %>% 
+  group_by(Season) %>%
+  summarise(quantile(estimate,0.025), quantile(estimate,0.975)) %>% 
+   knitr::kable(
+      caption = "95% Credible Intervals of Summver V.S. Non.Summer", 
+      col.names = c("Season", "Lower Bound", "Upper Bound"),
+      digits = 5
+  )
+```
+
+```{r}
+diff <- df$Summer - df$Non.Summer
+quantile(diff, c(0.025, 0.975))
+```
+
+```{r}
 month_df = df[,c(1:9,15)] %>%
   pivot_longer(!index,names_to = "Month", values_to = "estimate")
 month_df$Month = factor(month_df$Month, levels = c(
@@ -36,25 +103,7 @@ l1 = month_df %>% group_by(Month) %>%
   summarise(quantile(estimate,0.025),quantile(estimate,0.975))
 ```
 
-\begin{table}
-\centering
-\caption{95\% credible interval of gamma}
-\begin{tabular}{lcc}
-\toprule
-Month & Lower bound & Upper bound \\
-\midrule
-April & -0.098 & 0.100 \\
-May & -0.094 & 0.098 \\
-June & -0.098 & 0.098 \\
-July & -0.103 & 0.091 \\
-August & -0.084 & 0.103 \\
-September & -0.111 & 0.072 \\
-October & -0.090 & 0.102 \\
-November & -0.084 & 0.110 \\
-December & -0.099 & 0.095 \\
-\bottomrule
-\end{tabular}
-\end{table}
+
 
 The analysis of hurricane wind speeds in the North Atlantic area since 1950 using a Bayesian hierarchical model revealed interesting findings on the potential effects of seasonality on hurricane wind speeds. The model, which accounts for the spatial and temporal dependence of hurricane tracks and wind speeds, identified significant differences in wind speeds among different months. The 95% credible interval of gamma, which provides an estimate of the range of values that the true gamma parameter is likely to lie within, showed that September had the lowest credible interval with a lower bound of -0.111 and an upper bound of 0.072, indicating that hurricane wind speeds in September were relatively low compared to other months. On the other hand, August had the highest credible interval with a lower bound of -0.084 and an upper bound of 0.103, indicating that hurricane wind speeds in August were relatively high compared to other months. These findings are important for understanding the seasonality of hurricane wind speeds and can inform the development of better hurricane forecasting models to improve preparedness and response efforts.
 
@@ -65,17 +114,7 @@ The analysis of hurricane wind speeds in the North Atlantic area since 1950 usin
 df$Season %>% quantile(c(0.025,0.975))
 ```
 
-\begin{table}
-\centering
-\caption{95\% credible interval of the year estimate}
-\begin{tabular}{lcc}
-\toprule
-& Lower bound & Upper bound \\
-\midrule
-Year & -0.022 & -0.009 \\
-\bottomrule
-\end{tabular}
-\end{table}
+
 
 The 95% gamma credible interval for the year parameter suggests that there is a negative effect of year on hurricane wind speeds. Specifically, the credible interval ranges from -0.022 to -0.009, which indicates that the effect of year on hurricane wind speeds is statistically significant and negative. This means that hurricanes are generally weaker for recent years. However, it is important to note that the magnitude of the effect is relatively small, and other factors such as location and storm intensity may also play a role in determining hurricane wind speeds.
 
@@ -85,24 +124,10 @@ The 95% gamma credible interval for the year parameter suggests that there is a 
 t(apply(df[,10:13], 2, quantile, probs = c(0.025,  0.975)))
 ```
 
-\begin{table}
-\centering
-\caption{95\% credible interval of the hurricane parameter estimate}
-\begin{tabular}{lcc}
-\toprule
-& Lower bound & Upper bound \\
-\midrule
-Season & -0.022 & -0.009 \\
-ET & -0.222 & -0.037 \\
-NR & -0.104 & 0.087 \\
-SS & -0.087 & 0.110 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 ### Seasonal effect of summer against non-summer
 
-* 95% Gamma credible interval
+95% Gamma credible interval
 
 ```{r}
 df$Summer = (df$July + df$August +df$September + df$October)/4
@@ -114,20 +139,8 @@ month_df %>% group_by(Season) %>%
   summarise(quantile(estimate,0.025),quantile(estimate,0.975))
 ```
 
-\begin{table}
-\centering
-\caption{95\% credible interval of the Seasonal effect estimate}
-\begin{tabular}{lcc}
-\toprule
-& Lower bound & Upper bound \\
-\midrule
-none\_summer & -0.043 & 0.045 \\
-summer & -0.051 & 0.047 \\
-\bottomrule
-\end{tabular}
-\end{table}
 
-* 2 sample t test
+2 sample t test
 
 ```{r}
 t.test(df$Summer, df$Non.Summer, var.equal = TRUE)
