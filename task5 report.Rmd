@@ -103,10 +103,9 @@ We ran our algorithm with these starting values for 6000 iterations and decided 
 # Results
 ## Seasonal Analysis 
 ## Prediction 
+Accurately predicting hurricane wind speeds is crucial in hurricane forecasting. To achieve this, we calculated the posterior means of the parameters by averaging the last three thousand values in each MCMC chain, and used these means to predict wind speeds at each time point. 
 
-
-
-
+To assess the performance of our Bayesian model, we used the Root Mean Square Error (RMSE) of the predicted wind speeds compared to actual wind speeds for several hurricanes. In the table on the left, we list the 10 hurricanes with the least RMSE, with the first hurricane having only six observations but still achieving a small weighted average error of 1.095. This result indicates that our model can make accurate predictions even for hurricanes with fewer observations. 
 \begin{figure}[H] 
 \centering
 \includegraphics[width=0.5\textwidth]{Results/RMSE.png} 
@@ -114,6 +113,7 @@ We ran our algorithm with these starting values for 6000 iterations and decided 
 \label{Table}
 \end{figure}
 
+We further analyzed the model's performance on hurricanes with more than 50 observations and those with fewer than 50 observations, labeled 'more observations' and 'fewer observations', respectively, as shown in the graph on the right. The average RMSE for both categories is around 5, suggesting that our model's accuracy is not significantly affected by the amount of data available. This finding is reassuring and indicates that our model is effective in predicting wind speeds for hurricanes with varying amounts of data.
 \begin{figure}[H] 
 \centering
 \includegraphics[width=0.5\textwidth]{Results/MoreFewer.png} 
@@ -121,6 +121,7 @@ We ran our algorithm with these starting values for 6000 iterations and decided 
 \label{Figure}
 \end{figure}
 
+Additional plots are presented below to further investigate the model's performance. The graph displaying the average prediction points by month shows that our model performs well across different months, except for January, which has limited data points. When we evaluate our predictions by year or by nature, we see consistent performance across different years and types of hurricanes.
 \begin{figure}[H] 
 \centering
 \includegraphics[width=1.0\textwidth]{Results/MONTH.png}
@@ -142,15 +143,18 @@ We ran our algorithm with these starting values for 6000 iterations and decided 
 \label{Figure}
 \end{figure}
 
+In conclusion, our analysis using RMSE and additional graphs demonstrates that our Bayesian model is capable of making accurate predictions for hurricane wind speeds. These results suggest that our model is effective in predicting wind speeds for hurricanes with varying amounts of data, and performs consistently across different months, years, and types of hurricanes. These findings have significant implications for the field of hurricane prediction and can inform future research in this area.
+
 # Discussion 
+In summary, our application of the MCMC algorithm to the hurricane Bayesian model has yielded valuable insights into the prediction of hurricane wind speeds. Our analysis revealed significant seasonal differences in wind speeds and did not find any evidence to support the claim of increasing wind speeds over the years. These findings emphasize the importance of accounting for seasonal differences when modeling hurricane wind speeds. Although our final model did not achieve perfect convergence for every parameter, we were still able to produce reliable predictions. The use of MCMC has allowed us to overcome the challenges posed by the complicated distribution and high-dimensional space of hurricane wind speed data, demonstrating the usefulness of this algorithm in Bayesian analysis. 
+
+MCMC is a powerful tool in Bayesian statistics that is particularly useful for handling complicated distributions in high-dimensional spaces. One of its main advantages is its ability to explore the parameter space efficiently and estimate the posterior distribution of model parameters. This is particularly helpful when direct sampling is practically impossible in high-dimensional spaces.
+
+Despite its many benefits, MCMC has some drawbacks that need to be addressed. One major issue is the assumption of prior distribution, which can introduce bias and affect the estimation of the posterior distribution. Additionally, the method cannot guarantee convergence due to the correlation of samples, which can lead to errors in the estimation. To address these issues, the method can be improved by changing the sampler, increasing the number of samples, or trying different parameterizations of the model. These solutions can lead to more accurate and efficient estimation of the posterior distribution.
 
 
 
 # Group Contributions {-}
-
-
-\newpage 
-# References {-}
 
 
 
