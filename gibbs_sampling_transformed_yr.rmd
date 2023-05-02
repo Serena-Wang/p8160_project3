@@ -65,6 +65,14 @@ gamma <- gamma_init %>% as.matrix()
 ```
 
 ```{r}
+X_with_id <- cbind(as.numeric(factor(data2$ID)), X)
+#number of hurricanes
+H <- max(X_with_id[,1])
+ith_hurricane_idx <- 1:H |>
+  map(\(i) which(X_with_id[,1] == i))
+```
+
+```{r}
 chain <- metropolis_hasting_sigma_squared(start_sigma_squared = 27.2868, 
                                              numtocompute = 500, 
                                              a = 0.8, Y, D, B, X, gamma, H, ith_hurricane_idx)
@@ -79,16 +87,6 @@ for (i in 2:500) {
 }
 accept/500
 ```
-
-
-```{r}
-X_with_id <- cbind(as.numeric(factor(data2$ID)), X)
-#number of hurricanes
-H <- max(X_with_id[,1])
-ith_hurricane_idx <- 1:H |>
-  map(\(i) which(X_with_id[,1] == i))
-```
-
 
 ```{r}
 V <- .8 * diag(5)
