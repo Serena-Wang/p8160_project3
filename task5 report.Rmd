@@ -74,7 +74,7 @@ We decide starting values of each parameters by fitting a linear mixed effects m
 
 ```{r table1, echo = FALSE, message = FALSE, wanrings = FALSE}
 starting_val_df <- tibble(
-  terms = c("$\\gamma$", "$\\beta_{i_{1},...,i_{n}}$","$\\sigma^2$", "$\\beta_0$", "$\\mu$", 
+  terms = c("$\\gamma$", "$\\beta_{i_{1},...,i_{4}}$","$\\sigma^2$", "$\\beta_0$", "$\\mu$", 
             "$A = \\Sigma^{-1}$"
             
                     ),
@@ -100,6 +100,14 @@ Although our algorithm is not the most efficient algorithm, it has two main adva
 
 We ran our algorithm with these starting values for 6000 iterations and decided to burn the first 3000 samples for each parameters for analysis in the rest of this project. We use diagnostic plots to evaluate the quality of these samples. We created trace plots for all 6000 samples for each parameter, and autocorrelation plots and histogram plots for the second half of the samples after burn-in. 
 
+For a good set of samples, we expect to see the chain in trace plot stablize after a short amount of iterations. After the burn-in, we expect to see small or no autocorrelation and somewhat normal histograms. 
+
+Overall, MCMC samples for the fixed effect parameters $\gamma$ converge pretty well and their histograms have a nice bell shpae curve. There is very small autocorellation except $\gamma_{10}$ which is the coefficient for the Season variable.
+
+On the other hand, MCMC samples for the random effects parameters have more oscilliations in the trace plots even though most of them converge. For $\beta_{i_{0},...,i_{4}}$ and $\mu$, post burn-in samples have somewhat normal histograms and their autocorrelations decrease to a tolerable range of values within 50 lags. Samples for the inverse of the covariance matrix for $\beta_{i_{0},...,i_{4}}$ are tricky to converge. By the design of covariance matrix, if the samples of a variance term have too much oscilliations, the osciliations will propagate to other terms in the covairiance matrix as well. But still, a good number of terms in the inverse of the covariance matrix have converging samples that have small autocorrelation.
+
+Finally, for $\sigma^2$, our random walk is doing a good job. Samples do converge and have small correlation.
+
 ![Trace plots and ACF plots for $\beta$](mcmc_results_fig/transf_yr/beta/beta_chain_acf.png)
 
 ![Histograms for $\beta$](mcmc_results_fig/transf_yr/beta/beta_histograms.png)
@@ -123,6 +131,7 @@ We ran our algorithm with these starting values for 6000 iterations and decided 
 ![Histograms for $\sigma^2$](mcmc_results_fig/transf_yr/sigma_squared/sigma_squared.png)
 
 \newpage
+
 # Results
 ## Seasonal Analysis 
 ## Prediction 
@@ -189,11 +198,5 @@ Despite its many benefits, MCMC has some drawbacks that need to be addressed. On
 
 \newpage 
 # Appendix {-}
-
-
-
-
-
-
 
 
