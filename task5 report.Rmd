@@ -6,10 +6,6 @@ output:
   pdf_document:
     toc: yes
     toc_depth: '2'
-  html_document:
-    df_print: paged
-    toc: yes
-    toc_depth: '2'
 header-includes:
 - \usepackage{fancyhdr}
 - \usepackage{lipsum}
@@ -24,6 +20,7 @@ header-includes:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(knitr)
+library(tibble)
 ```
 
 \newpage 
@@ -50,6 +47,45 @@ The data given has 703 observations and following features are recorded for each
 # Methods
 ## Baysian Model  
 ## MCMC Algorithm 
+
+Given the fact that we cannot directly sample from the joint posterior distribution calculated above. We choose to use Gibbs sampling. Gibbs sampling is a sequential sampler that samples from the conditional distribtuion of each parameter so that the final collection of samples forms a Markov chain whose stationary distribution is the joint distribution that we are interested in. 
+
+In our case, conditional posteriors are more manageable than the joint posterior. Conditonal posteriors for each parameter are calculated as the following:
+
+!!! ADD CONDITONAL POSTERIOR
+
+Still, we could not find a regular distribution that has the density function that matches with the conditional posterior of $\sigma^2$. Therefore, we incorporated Metropolis Hasting Random Walk into Gibbs sampling. Metropolis Hasting Random Walk finds approximated values of $\sigma^2$ by accepting and rejecting proposed value with an acceptance probability that helps retain balance of the system. In our algorithm, we work with log-scaled posterior values instead of the original-scaled posterior because $\frac{1}{\sigma^N}$ dominates the entire posterior value where $N$ is the total number of observations in the data set.
+
+In our investigation of hurricane wind speed, we used Gibbs sampling and as Metropolis Hasting Random Walk as the following:
+
+![Gibbs Sampling](algo_fig/gibbs_sampling.png)
+
+![Metropolis Hasting Random Walk](algo_fig/random_walk.png)
+
+\newpage
+
+We decide starting values of each parameters by fitting a linear mixed effects model that is the same as the proposed model in a frequentist way and then extract its corresponding coefficients. Starting values for $\gamma$ are the fixed effects coefficients in the linear mixed effects model.
+
+```{r table1, echo = FALSE, message = FALSE, wanrings = FALSE}
+starting_val_df <- tibble(
+  terms = c("$\\gamma$", "$\\beta_{i_{1},...,i_{n}}$","$\\sigma^2$", "$\\beta_0$", "$\\mu$", 
+            "$A = \\Sigma^{-1}$"
+            
+                    ),
+  starting_val = c("Fixed effect coefficients in the fitted Linear Mixed Effects Model",
+                    "Random effect coefficients in the fitted Linear Mixed Effects Model",
+                    "Residual Variance in the fitted Linear Mixed Effects Model",
+                    "Sum of random effect and fixed effect intercepts in the fitted Linear Mixed Effects Model",
+                   "Mean of the $\\beta_{i_{1},...,i_{n}}$ for each predictor",
+                   "Mean of the Wishart distribution with $\\nu$ = 5 and scale matrix with 0.7 on the main diagnoal and 0.2 on off-diagnoal"
+                    )
+)
+kable(starting_val_df,
+      col.names = c("Terms", "Starting Value"),
+      caption = "Starting Values for Gibbs Sampling")
+```
+
+
 
 
 
