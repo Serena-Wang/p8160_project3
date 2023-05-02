@@ -100,6 +100,30 @@ Although our algorithm is not the most efficient algorithm, it has two main adva
 
 We ran our algorithm with these starting values for 6000 iterations and decided to burn the first 3000 samples for each parameters for analysis in the rest of this project. We use diagnostic plots to evaluate the quality of these samples. We created trace plots for all 6000 samples for each parameter, and autocorrelation plots and histogram plots for the second half of the samples after burn-in. 
 
+![Trace plots and ACF plots for $\beta$](mcmc_results_fig/transf_yr/beta/beta_chain_acf.png)
+
+![Histograms for $\beta$](mcmc_results_fig/transf_yr/beta/beta_histograms.png)
+
+![Trace plots and ACF plots for $\mu$](mcmc_results_fig/transf_yr/mu/mu_chain_acf.png)
+
+![Histograms for $\mu$](mcmc_results_fig/transf_yr/mu/mu_histograms.png)
+
+![Trace plots for $A = \Sigma^{-1}$](mcmc_results_fig/transf_yr/A/A_chain.png)
+
+![ACF plots for $A = \Sigma^{-1}$](mcmc_results_fig/transf_yr/A/A_acf.png)
+
+![Histograms for $A = \Sigma^{-1}$](mcmc_results_fig/transf_yr/A/A_histograms.png)
+
+![Trace plots for $\gamma$](mcmc_results_fig/transf_yr/gamma/gamma_chains.png)
+
+![ACF plots for $\gamma$](mcmc_results_fig/transf_yr/gamma/gamma_acf.png)
+
+![Histograms for $\gamma$](mcmc_results_fig/transf_yr/gamma/gamma_histograms.png)
+
+![Histograms for $\sigma^2$](mcmc_results_fig/transf_yr/sigma_squared/sigma_squared.png)
+
+\newpage
+
 # Results
 ## Seasonal Analysis 
 ## Prediction 
