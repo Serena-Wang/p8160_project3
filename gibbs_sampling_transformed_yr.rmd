@@ -117,51 +117,24 @@ save(test2,file = "test2.RData")
 
 ## Gibbs sampling posterior plots
 ```{r}
-#jpeg(file="./mcmc_results_fig2/gamma/gamma_1-4_chain.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
-for (i in 1:4){
-  
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
-}
-#dev.off()
-```
-
-```{r}
-#jpeg(file="./mcmc_results_fig2/gamma/gamma_5-8_chain.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
-for (i in 5:8){
-  
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
-}
-#dev.off()
-```
-
-```{r}
-#jpeg(file="./mcmc_results_fig/gamma/gamma_9-12_chain.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
-for (i in 9:12){
-  
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
-}
-#dev.off()
-```
-
-```{r}
-#jpeg(file="./mcmc_results_fig2/gamma/gamma_13-14_chain.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(4,1),mar = c(2, 5, 1, 1))
-for (i in 13:14){
-  
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = paste0("gamma_", i, "_value"))
-}
-#dev.off()
-```
-
-```{r}
-#jpeg(file="./mcmc_results_fig2/gamma/gamma_acf.png", width = 1200, height = 600, quality = 100)
+#jpeg(file="./mcmc_results_fig/transf_yr/gamma/gamma_chains.png", width = 2400, height = 1200, quality = 500)
 par(mfrow=c(5,3),mar = c(2, 5, 1, 1))
 for (i in 1:14){
+  
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["gamma"]][[x]][i,1]), xlab = "", ylab = "",main = paste0("gamma_", i))
+}
+#dev.off()
+```
+
+
+
+```{r}
+#jpeg(file="./mcmc_results_fig/transf_yr/gamma/gamma_acf.png", width = 2400, height = 1200, quality = 500)
+par(mfrow=c(5,3),mar = c(2, 5, 1, 1))
+#par(mfrow=c(5,3))
+for (i in 1:14){
   ac <- acf(sapply(3001:nitr, function(x) test2[["gamma"]][[x]][i,1]), lag.max = 300,plot = FALSE)
-  plot(ac, ylab = paste0("gamma_", i, "_acf_value"))
+  plot(ac, ylab = paste0("gamma_", i))
 }
 #dev.off()
 ```
@@ -170,30 +143,26 @@ for (i in 1:14){
 #jpeg(file="./mcmc_results_fig/gamma/gamma_histograms.png", width = 1200, height = 600, quality = 100)
 par(mfrow=c(5,3),mar = c(2, 5, 1, 1))
 for (i in 1:14){
-  hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["gamma"]][[x]][i]), main= paste0("gamma_", i, "_value"))
+  hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["gamma"]][[x]][i]), main= paste0("gamma_", i))
 }
 #dev.off()
 ```
 
 
 ```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+par(mfrow=c(5,2),mar = c(2, 5, 1, 1))
 for (i in 1:5){
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["mu"]][[x]][i]), xlab = "", ylab = paste0("mu_", i-1, "_value"))
-}
-```
-```{r}
-par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
-for (i in 1:5){
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["mu"]][[x]][i]), xlab = "", ylab = "", main = paste0("mu_", i-1))
   ac <- acf(sapply(3001:nitr, function(x) test2[["mu"]][[x]][i]), lag.max = 300,plot = FALSE)
-  plot(ac, ylab = paste0("mu_", i-1, "_acf_value"))
+  plot(ac, ylab = paste0("mu_", i-1))
 }
 ```
+
 ```{r}
 #jpeg(file="./mcmc_results_fig2/mu/mu_histograms.png", width = 1200, height = 600, quality = 100)
 par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
 for (i in 1:5){
-  hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["mu"]][[x]][i]), main= paste0("mu_", i-1, "_value"))
+  hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["mu"]][[x]][i]), main= paste0("mu_", i-1))
 }
 #dev.off()
 ```
@@ -215,9 +184,13 @@ for (i in 1:nitr){
 ```
 
 ```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+par(mfrow=c(5,2),mar = c(2, 5, 1, 1))
 for (i in 1:5){
-  plot(eval(parse(text = paste0("beta_", i-1))), type='l', xlab = "", ylab = paste0("beta_", i-1, "_value"))
+  plot(eval(parse(text = paste0("beta_", i-1))), type='l', xlab = "", ylab = "", main = paste0("beta_", i-1))
+  val <- eval(parse(text = paste0("beta_", i-1)))
+  ac <- acf(val[3001:nitr], lag.max = 300,plot = FALSE)
+  plot(ac, ylab = paste0("beta_", i-1))
+       
 }
 ```
 
@@ -235,66 +208,30 @@ for (i in 1:5){
 par(mfrow=c(2,3),mar = c(2, 5, 1, 1))
 for (i in 1:5){
   val <- eval(parse(text = paste0("beta_", i-1)))
-  hist(val[3001:nitr], freq = F, nclass = 100, main =  paste0("beta_", i-1, "_value"))
+  hist(val[3001:nitr], freq = F, nclass = 100, main =  paste0("beta_", i-1))
 }
 #dev.off()
 ```
 
 ```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
+par(mfrow=c(5,5),mar = c(2, 2, 1, 1))
 for (i in 1:5){
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][1,i]), xlab = "", ylab = paste0("A_[1,", i,"]", "_value"))
-}
-```
-
-```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
-for (i in 1:5){
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][2,i]), xlab = "", ylab = paste0("A_[2,", i,"]", "_value"))
-}
-```
-```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
-for (i in 1:5){
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][3,i]), xlab = "", ylab = paste0("A_[3,", i,"]", "_value"))
-}
-```
-
-```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
-for (i in 1:5){
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][4,i]), xlab = "", ylab = paste0("A_[4,", i,"]", "_value"))
-}
-```
-
-```{r}
-par(mfrow=c(5,1),mar = c(2, 5, 1, 1))
-for (i in 1:5){
-  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][5,i]), xlab = "", ylab = paste0("A_[5,", i,"]", "_value"))
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][i,1]), xlab = "", ylab = "",main = paste0("A_[", i,",1]"))
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][i,2]), xlab = "", ylab ="",main= paste0("A_[", i,",2]"))
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][i,3]), xlab = "", ylab ="",main= paste0("A_[", i,",3]"))
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][i,4]), xlab = "", ylab ="",main= paste0("A_[", i,",4]"))
+  plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["A"]][[x]][i,5]), xlab = "", ylab ="",main= paste0("A_[", i,",5]"))
 }
 ```
 
 ```{r}
 #jpeg(file="./mcmc_results_fig2/A/A_1-3_rows_acf.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
+par(mfrow=c(5,5),mar = c(2, 4, 1, 1))
 
-for (r in 1:3){
+for (r in 1:5){
   for (i in 1:5){
     ac <- acf(sapply(3001:nitr, function(x) test2[["A"]][[x]][r,i]), lag.max = 300,plot = FALSE)
-    plot(ac, ylab = paste0("A_[",r,",", i,"]", "_acf_value"))
-  }
-}
-#dev.off()
-```
-
-```{r}
-#jpeg(file="./mcmc_results_fig2/A/A_4-5_rows_acf.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
-
-for (r in 4:5){
-  for (i in 1:5){
-    ac <- acf(sapply(3001:nitr, function(x) test2[["A"]][[x]][r,i]), lag.max = 300,plot = FALSE)
-    plot(ac, ylab = paste0("A_[",r,",", i,"]", "_acf_value"))
+    plot(ac, ylab = paste0("A_[",r,",", i,"]"))
   }
 }
 #dev.off()
@@ -302,34 +239,22 @@ for (r in 4:5){
 
 ```{r}
 #jpeg(file="./mcmc_results_fig2/A/A_1-3_rows_histograms.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
-for (r in 1:3){
+par(mfrow=c(5,5),mar = c(2, 2, 1, 1))
+for (r in 1:5){
   for (i in 1:5){
-    hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["A"]][[x]][r,i]), main= paste0("A_[",r,",", i,"]", "_value"))
+    hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["A"]][[x]][r,i]), main= paste0("A_[",r,",", i,"]"))
   }
 }
 #dev.off()
 
 ```
-
-```{r}
-#jpeg(file="./mcmc_results_fig2/A/A_4-5_rows_histograms.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(3,5),mar = c(2, 5, 1, 1))
-for (r in 4:5){
-  for (i in 1:5){
-    hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["A"]][[x]][r,i]), main= paste0("A_[",r,",", i,"]", "_value"))
-  }
-}
-#dev.off()
-```
-
 
 ```{r}
 #jpeg(file="./mcmc_results_fig/sigma_squared/sigma_squared.png", width = 1200, height = 600, quality = 100)
-par(mfrow=c(3,1),mar = c(2, 5, 1, 1))
-plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["sigma_squared"]][[x]][1]), xlab = "", ylab = "sigma_squared")
-hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["sigma_squared"]][[x]][1]), main= "sigma_squared value")
- ac <- acf(sapply(3001:nitr, function(x) test2[["sigma_squared"]][[x]][1]), lag.max = 300,plot = FALSE)
-  plot(ac, ylab = "sigma_squared_acf_value")
+par(mfrow=c(4,1),mar = c(2, 4, 1, 1))
+plot(1:nitr, type='l', sapply(1:nitr, function(x) test2[["sigma_squared"]][[x]][1]), xlab = "", ylab ="",main= "sigma_squared")
+hist(freq = F, nclass = 100, sapply(3001:nitr, function(x) test2[["sigma_squared"]][[x]][1]), main= "sigma_squared")
+ac <- acf(sapply(3001:nitr, function(x) test2[["sigma_squared"]][[x]][1]), lag.max = 300,plot = FALSE)
+plot(ac, ylab = "sigma_squared")
 #dev.off()
 ```
