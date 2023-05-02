@@ -54,7 +54,7 @@ In our case, conditional posteriors are more manageable than the joint posterior
 
 !!! ADD CONDITONAL POSTERIOR
 
-Still, we could not find a regular distribution that has the density function that matches with the conditional posterior of $\sigma^2$. Therefore, we incorporated Metropolis Hasting Random Walk into Gibbs sampling. Metropolis Hasting Random Walk finds approximated values of $\sigma^2$ by accepting and rejecting proposed value with an acceptance probability that helps retain balance of the system. In our algorithm, we work with log-scaled posterior values instead of the original-scaled posterior because $\frac{1}{\sigma^N}$ dominates the entire posterior value where $N$ is the total number of observations in the data set.
+Still, we could not find a regular distribution that has the density function that matches with the conditional posterior of $\sigma^2$. Therefore, we incorporated Metropolis Hasting Random Walk into Gibbs sampling. Metropolis Hasting Random Walk finds approximated values of $\sigma^2$ by accepting and rejecting proposed value with an acceptance probability that helps maintain the detailed balance condition. In our algorithm, we work with log-scaled posterior values instead of the original-scaled posterior because $\frac{1}{\sigma^N}$ dominates the entire posterior value where $N$ is the total number of observations in the data set.
 
 In our investigation of hurricane wind speed, we used Gibbs sampling and Metropolis Hasting Random Walk as the following:
 
@@ -89,9 +89,11 @@ kable(starting_val_df,
 
 With the stating values above, we assume that the true $\sigma^2$ will be around 27 and tried a few values for window size $a$. Finally, with $a = 0.8$, $\sigma^2$ samples converge pretty quickly and the acceptance rate is around 46% with 500 iterations. Therefore, we set $a = 0.8$ in each iteration of Gibbs Sampling and burn the first 400 samples of $\sigma^2$. 
 
+Although our algorithm is not the most efficient algorithm, it has two main advantages: 1) It is simple to compute and does not rely on the calculation of gradient of log densities as Hamiltonian Monte Carlo; 2) By incorporating the Random Walk, we have the flexibility to control the range of sampling area when the conditional distribution of parameter of interest is difficult to simulate from and when our initial prior is not informative .  
+
 ## MCMC Results
 
-We ran our algorithm with these starting values for 6000 iterations and decided to burn the first 3000 samples for each parameters for analysis in the rest of this project. We use plots to evaluate the quality of these samples. We created trace plots for all 6000 samples for each parameter, and autocorrelation plots and histogram plots for the second half of the samples after burn-in. 
+We ran our algorithm with these starting values for 6000 iterations and decided to burn the first 3000 samples for each parameters for analysis in the rest of this project. We use diagnostic plots to evaluate the quality of these samples. We created trace plots for all 6000 samples for each parameter, and autocorrelation plots and histogram plots for the second half of the samples after burn-in. 
 
 # Results
 ## Seasonal Analysis 
