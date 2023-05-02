@@ -1,9 +1,13 @@
 ---
 title: "P8160 - Baysian modeling of hurrican trajectories"
 author: "Jiahao Fan, Tianwei Zhao, Yijin Wang, Youlan Shen, Yujia Li"
-date: "2023-04-29"
+date: "2023-05-02"
 output:
   pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
     toc: yes
     toc_depth: '2'
 header-includes:
@@ -19,6 +23,7 @@ header-includes:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(tinytex.verbose = TRUE)
 library(knitr)
 library(tibble)
 ```
@@ -101,11 +106,47 @@ We ran our algorithm with these starting values for 6000 iterations and decided 
 
 
 
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=0.5\textwidth]{Results/RMSE.png} 
+\caption{Prediction Standard Error of Wind Speed in Ascending Order}
+\label{Table}
+\end{figure}
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=0.5\textwidth]{Results/MoreFewer.png} 
+\caption{Prediction Standard Error of Wind Speed by Number of Observation}
+\label{Figure}
+\end{figure}
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=1.0\textwidth]{Results/MONTH.png}
+\caption{Actual Wind Speed vs.Predicted Wind Speed by Month}
+\label{Figure}
+\end{figure}
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=1.0\textwidth]{Results/YEAR.png} 
+\caption{Actual Wind Speed vs.Predicted Wind Speed by Year}
+\label{Figure}
+\end{figure}
+
+\begin{figure}[H] 
+\centering
+\includegraphics[width=1.0\textwidth]{Results/NATURE.png} 
+\caption{Actual Wind Speed vs.Predicted Wind Speed by Nature}
+\label{Figure}
+\end{figure}
+
 # Discussion 
 
 
 
-## Group Contributions {-}
+# Group Contributions {-}
 
 
 \newpage 
