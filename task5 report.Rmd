@@ -199,7 +199,7 @@ Gibbs Sampling is a powerful tool in Bayesian statistics that is particularly us
 
 Despite its many benefits, our sampler has some drawbacks that need to be addressed. One major issue is the assumption of prior distribution, which can introduce bias and affect the estimation of the posterior distribution. To find more informative priors, we can look for external sources on hurricane forecasting and create exploratory plots for some random samples of the data set. Additionally, the method cannot guarantee convergence due to the correlated samples, which can lead to errors in the estimation. To address this issue, our method can be improved by upgrading to a more developed sampler such as Hamiltonian Monte Carlo, increasing number of samples, or trying different parameterizations of the model. These solutions can lead to more accurate and efficient estimation of the posterior distribution.
 
-In the end, we must also note that the data set only include hurricane observations from 1950 up to 2013. Our results might not be generalizable to predict wind speed of hurricanes beyond this time range especially due to global warming in recent years. 
+In the end, we must also note that the data set only includes hurricane observations from 1950 up to 2013. Our results are not be generalizable to predict wind speed of hurricanes beyond this time range especially due to global warming in recent years. 
 
 
 # Group Contributions {-}
