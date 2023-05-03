@@ -1,5 +1,5 @@
 ---
-title: "P8160 - Baysian modeling of hurrican trajectories"
+title: "P8160 - Baysian Modeling of Hurrican Trajectories"
 author: "Jiahao Fan, Tianwei Zhao, Yijin Wang, Youlan Shen, Yujia Li"
 date: "2023-05-02"
 output:
@@ -258,7 +258,7 @@ Finally, we have $f(\gamma|B, \mu, \sigma^2, \Sigma, Y) \sim MVN(M^{-1}N, M^{-1}
 
 Our raw data was preprocessed to address the idea of our model and enhance the convergence of the parameters in our Bayesian model. We have excluded the first two observations of each hurricane because the previous two time points of change are only available from the third observation. At the same time, we selected January in the Month and DS in Nature (type) as our reference group, therefore, we only had 14 covariates in the $X_i$ vector with nine factor covariates Month (from April to December) and four factor covariates Type (ET NR SS TS), and one numerical covariate Season (Year). 
 
-Initially, we conducted MCMC sampling using the original Year data from 1950 to 2013. However, the resulting Year parameters did not converge. Consequently, we employed a scaled Year dataset obtained by subtracting 1949 from each Year value, which eventually led to the convergence of the Year parameters.
+Initially, we conducted MCMC sampling using the original Year data from 1950 to 2013. However, the resulting Year parameter did not converge. Consequently, we employed a scaled Year dataset obtained by subtracting 1949 from each Year value, which eventually led to the convergence of the Year parameter.
 
 ## MCMC Algorithm 
 
