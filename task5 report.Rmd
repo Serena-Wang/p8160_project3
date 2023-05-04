@@ -289,8 +289,8 @@ We decide starting values of each parameters by fitting a linear mixed effects m
 
 ```{r table1, echo = FALSE, message = FALSE, wanrings = FALSE}
 starting_val_df <- tibble(
-  terms = c("$\\gamma$", "$\\beta_{i_{1},...,i_{4}}$","$\\sigma^2$", "$\\beta_0$", "$\\mu$", 
-            "$A = \\Sigma^{-1}$"
+  terms = c("$\\gamma$", "$\\beta_{1,i},...,\\beta_{4,i}$","$\\sigma^2$", "$\\beta_{0,i}$", "$\\mu$", 
+            "$A = \\Sigma^{-1}$", "V"
             
                     ),
   starting_val = c("Fixed effect coefficients in the fitted Linear Mixed Effects Model",
@@ -298,7 +298,9 @@ starting_val_df <- tibble(
                     "Residual Variance in the fitted Linear Mixed Effects Model",
                     "Sum of random effect and fixed effect intercepts in the fitted Linear Mixed Effects Model",
                    "Mean of the $\\beta_{i_{1},...,i_{n}}$ for each predictor",
-                   "Mean of the Wishart distribution with $\\nu$ = 5 and scale matrix with 0.7 on the main diagnoal and 0.2 on off-diagnoal"
+                   "Mean of the Wishart distribution with $\\nu$ = 5 and scale matrix S with 0.7 on the main diagnoal and 0.2 on off-diagnoal",
+                    "A square matrix with 0.8 on the main diagnoal and 0.1 on off-diagnoal"
+                   
                     )
 )
 kable(starting_val_df,
@@ -442,12 +444,22 @@ Despite its many benefits, our sampler has some drawbacks that need to be addres
 
 In the end, we must also note that the dataset only includes hurricane observations from 1950 up to 2013. Our results are not be generalizable to predict wind speed of hurricanes beyond this time range especially due to global warming in recent years. 
 
+# Code Availability 
+
+To find all the code for our analysis, please go to https://github.com/Serena-Wang/p8160_project3
+
 
 # Group Contributions {-}
 
+Tianwei Zhao worked with Youlan Shen on coding the EDA. Tianwei presented and wrote about this section in this report. 
 
+Yujia Li participated in the initial steps of calculating the joint posterior distribution. She presented and wrote about model prediction and project conclusion. 
 
-\newpage 
-# Appendix {-}
+Jiahao Fan worked with Youlan Shen on seasonal analysis. He also presented and wrote about this section. 
+
+Youlan Shen revised and completed joint posterior and conditional posteriors calculations. She coded the majority of EDA, all of model performance analysis and part of seasonal analysis. She presented and wrote about posterior calculations. 
+
+Yijin Wang revised and completed joint posterior calculation with Youlan. Yijin also coded Gibbs sampling and random walk algorithm. She presented and wrote about this part in this report. 
+
 
 
